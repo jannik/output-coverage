@@ -1,1 +1,1 @@
-# output-coverage
+# Thesis Project: Output Coverage in Twelf
