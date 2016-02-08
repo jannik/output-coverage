@@ -1,0 +1,11 @@
+## latex auxiliary files
+
+*.aux
+*.log
+
+*.bbl
+*.blg
+
+*.synctex
+
+*.pdf
