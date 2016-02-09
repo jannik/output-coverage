@@ -37,8 +37,10 @@
 
 \section*{Background}
 
-In logic programming, functions are expressed as relations.
+In logic programming, functions are expressed as relations. [...]
 % And some relations are in fact total functions..
+
+[How this relates to LF and Twelf.]
 
 As part of the abstract syntax of a programming language, it is common to have truth values $t$ and boolean expressions $b$:
 \begin{align*}
@@ -75,7 +77,7 @@ And the following evaluation judgement gives a natural semantics to boolean expr
 
 This relation (as far as it is specified) is clearly a function, viewing $b$ as input and $t$ as output.
 It is furthermore a total function, i.e. any expression $b$ evaluates to some value $t$.
-If we omit one the rules for negation, however, the function is no longer total;
+If we omit one of the rules for negation, however, the function is no longer total;
 the premise of the remaining rule requires that $b$ evaluates to a specific truth value, but that is by no means a certainty.
 
 In terms of logic programming, the output of a subgoal is not [what is correct to say?]
@@ -102,7 +104,7 @@ That is, we essentially have to write a single general \rulename{E-Neg} rule tha
 
 { % judgement
 \vspace{0.5cm}
-\noindent \framebox{\step{t}{t}}
+\noindent \framebox{\step{t}{t'}}
 
 \begin{prooftree}
   \leftl{\rulename{N-True} :}
@@ -120,14 +122,23 @@ That is, we essentially have to write a single general \rulename{E-Neg} rule tha
 Twelf will then be able to verify that the evaluation relation is a total function, but this comes at the cost of readability and extra work.
 The problem is particularly present when proving meta-theorems about deductive systems and using totality checking as proof checking, which is after all what Twelf is designed for.
 % i.e. lots of annoying lemmas
-% mention also the related problem of contradictions
 
-\section*{Approach}
+A similar problem occurs when trying to rule out a contradictory case in a proof.
+In order for Twelf to recognise that the case is vacuously covered, we must employ a lemma and use input-coverage checking in place of the output-coverage checking.
 
-[Goal of the project --- to look into and try to improve the situation.]
+\section*{[Goals/Tasks/Method/Approach]}
+
+The goal of this project is to investigate --- and attempt to solve --- the underlying problems related to output coverage checking in a setting such as Twelf.
+
+[What should I say here?]
 
 \section*{Learning Objectives}
 
-[A few project-specific learning objectives.]
+\begin{itemize}
+	\item Survey and summarise relevant techniques for analysing logic programs. [too vague?]
+  \item Analyse the current state of coverage checking in Twelf and similar languages, and consider alternative approaches. [too specific?]
+  \item Design a deductive system [or algorithm?] that facilitates improved coverage checking, and prove relevant properties about the system, e.g. soundness.
+  \item Implement this system as proof-of-concept, possibly integrated in Twelf, and evaluate it as a solution to the problem.
+\end{itemize}
 
 \end{document}
