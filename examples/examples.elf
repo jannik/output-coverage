@@ -1,0 +1,155 @@
+%{ ------------------- }%
+%{ motivating examples }%
+%{ ------------------- }%
+
+val : type. %name val T.
+
+true : val.
+false : val.
+
+
+
+exp : type. %name exp B.
+
+const : val -> exp.
+neg : exp -> exp.
+
+
+
+eval : exp -> val -> type.
+%mode eval +B -T.
+
+eval/const : eval (const T) T.
+
+eval/neg-t : eval (neg B) false
+              <- eval B true.
+
+eval/neg-f : eval (neg B) true
+              <- eval B false.
+
+%worlds () (eval _ _).
+% should be total but output covering fails
+% %total B (eval B _).
+% should be unique but this fails as well
+% %unique eval +B -T.
+
+
+
+negate : val -> val -> type.
+%mode negate +T -T'.
+
+negate/true : negate true false.
+
+negate/false : negate false true.
+
+%worlds () (negate _ _).
+%total {} (negate _ _).
+%unique negate +T -T'.
+
+
+
+eval' : exp -> val -> type.
+%mode eval' +B -T.
+
+eval'/const : eval' (const T) T.
+
+eval'/neg : eval' (neg B) T'
+            <- eval' B T
+            <- negate T T'.
+
+%worlds () (eval' _ _).
+%total B (eval' B _).
+%unique eval' +B -T.
+
+
+
+eq-val : val -> val -> type. %name eq-val Q.
+
+eq-val/refl : eq-val T T.
+
+
+
+uninhabited : type. %name uninhabited U.
+
+
+
+neq-true-false : eq-val true false -> uninhabited -> type.
+%mode neq-true-false +Q -U.
+% no cases
+%worlds () (neq-true-false _ _).
+%total {} (neq-true-false _ _).
+
+
+
+neq-false-true : eq-val false true -> uninhabited -> type.
+%mode neq-false-true +Q -U.
+% no cases
+%worlds () (neq-false-true _ _).
+%total {} (neq-false-true _ _).
+
+
+
+get-eq : uninhabited -> eq-val T T' -> type.
+%mode +{T} +{T'} +{U} -{Q:eq-val T T'} get-eq U Q.
+% no cases
+%worlds () (get-eq _ _).
+%total {} (get-eq _ _).
+
+
+
+eval-uniq : eval B T -> eval B T' -> eq-val T T' -> type.
+%mode eval-uniq +E1 +E2 -Q.
+
+eval-uniq/const : eval-uniq eval/const eval/const eq-val/refl.
+
+eval-uniq/neg-t/neg-t : eval-uniq (eval/neg-t E1) (eval/neg-t E2) eq-val/refl.
+
+eval-uniq/neg-t/neg-f : eval-uniq (eval/neg-t E1) (eval/neg-f E2) Q'
+                         <- eval-uniq E1 E2 Q
+                         <- neq-true-false Q U
+                         <- get-eq U Q'.
+                         % Q is an object of type true=false, which output coverage fails to recognise
+
+eval-uniq/neg-f/neg-f : eval-uniq (eval/neg-f E1) (eval/neg-f E2) eq-val/refl.
+
+eval-uniq/neg-f/neg-t : eval-uniq (eval/neg-f E1) (eval/neg-t E2) Q'
+                         <- eval-uniq E1 E2 Q
+                         <- neq-false-true Q U
+                         <- get-eq U Q'.
+
+%worlds () (eval-uniq _ _ _).
+%total E1 (eval-uniq E1 _ _).
+
+
+
+% --- I hoped the following could be examples of encountering output freeness and needing coercion lemmas, but I guess not.
+
+completeness-eval' : eval B T -> eval' B T -> type.
+%mode completeness-eval' +E -E'.
+
+completeness-eval'/const : completeness-eval' eval/const eval'/const.
+
+completeness-eval'/neg-t : completeness-eval' (eval/neg-t E) (eval'/neg negate/true E')
+                            <- completeness-eval' E E'.
+
+completeness-eval'/neg-f : completeness-eval' (eval/neg-f E) (eval'/neg negate/false E')
+                            <- completeness-eval' E E'.
+
+%worlds () (completeness-eval' _ _).
+%total E (completeness-eval' E _).
+
+
+
+soundness-eval' : eval' B T -> eval B T -> type.
+%mode soundness-eval' +E' -E.
+
+soundness-eval'/const : soundness-eval' eval'/const eval/const.
+
+soundness-eval'/neg-t : soundness-eval' (eval'/neg negate/true E') (eval/neg-t E)
+                         <- soundness-eval' E' E.
+
+soundness-eval'/neg-f : soundness-eval' (eval'/neg negate/false E') (eval/neg-f E)
+                         <- soundness-eval' E' E.
+
+%worlds () (soundness-eval' _ _).
+%total E' (soundness-eval' E' _).

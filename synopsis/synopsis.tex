@@ -144,7 +144,7 @@ In order for Twelf to recognise that the case is vacuously covered, we must empl
 As an example, we can try to prove that evaluation is deterministic, i.e. \textit{if $\eval{b}{t}$ and $\eval{b}{t'}$ then $t = t'$}, by induction on the first evaluation derivation.
 If one derivation ends in \rulename{E-NegT} and the other in \rulename{E-NegF}, by the induction hypothesis we get the contradiction $\true = \false$, and so the case is impossible.
 Representing equality of truth values as a type family in Twelf, the contradiction is represented by having an inhabitant of an empty equality type.
-But the output coverage checker does notice this, and so we have to refer to a specialised lemma (with zero clauses!) that uses the contradiction to produce whatever we need for the proof case.
+But the output coverage checker does not notice this, and so we have to refer to a specialised lemma (with zero clauses!) that uses the contradiction to produce whatever we need for the proof case.
 
 % mention third problem --- output freeness
 
