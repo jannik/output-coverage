@@ -39,10 +39,10 @@
 
 \section*{Background}
 
-In logic programming, (partial) functions are expressed simply as relations that are moded, i.e. with input and output variables specified.
-A moded relation is total, and so defines a total function, if for all possible input values there exist output values to satisfy the relation.
+In logic programming, (partial) functions are expressed simply as relations that are well-moded, i.e. with input and output variables specified.
+A well-moded relation is total, and so defines a total function, if for all possible input values there exist output values to satisfy the relation.
 In constructive logic, a theorem of the form $\forall x{:}S . \, \exists y{:}T . \, p(x, y)$ corresponds to a total function mapping inputs of type $S$ to outputs of type $T$ --- producing for any $x$ a witness $y$ such that $p(x, y)$.
-Hence it is important to be able to verify totality of moded relations in logic languages, and this is what e.g. the Twelf system~\cite{PfenningSchurmann99} is designed to do.
+Hence it is important to be able to verify totality of well-moded relations in logic languages, and this is what e.g. the Twelf system~\cite{PfenningSchurmann99} is designed to do.
 
 Theorem checking is the main motivation, but let us illustrate the problem with a simpler example.
 As part of the abstract syntax of a programming language, it is common to have truth values $t$ and boolean expressions $b$:
@@ -87,6 +87,7 @@ The judgement can be formalised as a logic programming signature as follows (usi
 \begin{center}
 \begin{BVerbatim}
 eval : exp -> val -> type.
+%mode eval +B -T.
 
 eval/const : eval (const T) T.
 
@@ -98,12 +99,18 @@ eval/neg-f : eval (neg B) true
 \end{BVerbatim}
 \end{center}
 Omitting the \texttt{eval/neg-f} rule, say, the output of the subgoal in \texttt{eval/neg-t} is not necessarily covered by any rules.
-This introduces the notion of \textit{output coverage}.
+This introduces the notion of \textit{output coverage}~\cite{OutputCoverage}.
 
 \section*{Problem}
 
 Having formalised the relation as above, we might then like the Twelf system to be able to verify that it defines a total function.
-However, as part of its totality checker Twelf checks output coverage --- and it does so for each rule in isolation.
+
+Twelf's totality checker~\cite[ch. 9.3]{TwelfUserGuide} first checks that the function must terminate, i.e. it verifies that for all recursive calls the input argument is strictly smaller --- according to some well-ordering on terms of the relevant type.
+And indeed, \texttt{B} is smaller than \texttt{neg B} under the natural subterm relation on \texttt{exp}.
+It then checks input coverage~\cite{SchurmannPfenning03}; there must be at least one clause for each possible form the input argument of type \texttt{exp} can take.
+This check also succeeds, even with only one of the rules for negation.
+
+However, as the final part of its totality checker Twelf checks output coverage --- and it does so for each rule in isolation.
 This way it correctly identifies that the version with just a single of the two rules for negation does not define a total function.
 On the other hand, it fails to identify that \rulename{E-NegT} and \rulename{E-NegF} together make the function total.
 
@@ -134,8 +141,9 @@ That is, we essentially have to write a single general \rulename{E-Neg} rule tha
 \vspace{0.5cm}
 }
 
-This is referred to as \textit{output factoring}.
-Twelf will then be able to verify that the evaluation relation is a total function, but this comes at the cost of readability and extra work.
+This transformation is referred to as \textit{output factoring}~\cite{OutputFactoring}.
+The new version of the evaluation relation is clearly total because the negation relation is, and in fact Twelf is now able to verify this.
+However, it is longer (including the additional judgement) and less readable, and the transformation has required extra work.
 The problem is particularly present when proving meta-theorems about deductive systems and using totality checking as proof checking, which is after all what Twelf is most often used for.
 
 A similar problem occurs when trying to rule out a contradictory case in a proof.
@@ -148,7 +156,7 @@ But the output coverage checker does not notice this, and so we have to refer to
 
 % mention third problem --- output freeness
 
-\section*{Goals}
+\section*{Project Goals}
 
 The overall goal of this project is to investigate --- and develop solutions for --- the problems related to output coverage checking in the following settings:
 
@@ -162,18 +170,18 @@ The overall goal of this project is to investigate --- and develop solutions for
     \end{itemize}
 \end{itemize}
 
-\section*{Approach}
+As mentioned, output coverage checking is a part of the larger machinery of totality checking --- as well as mode, worlds and uniqueness checking.
+In analysing output coverage, it may well prove relevant to involve some of these other analyses.
+For instance, it is unclear how a contradictory case, which is recognised as such by an output coverage analysis and so left unfinished in some sense, will then be accepted by the mode checker.
+It is therefore natural to reconsider the dependencies of these different checking procedures.
 
-% this section doesn't really fit in
-
-A system that improves on solves output-coverage checking problems may take different forms.
-One approach is to identify common patterns where factorisation might be needed, blindly factorise in all matching cases, and then hand over the resulting, longer program to Twelf's existing totality checker.
+A system that solves the output-coverage checking problems may take different forms.
+One approach is to identify common patterns where e.g. factorisation might be needed, blindly factorise in all matching cases as a preprocessing step, and then hand over the resulting, longer program to Twelf's existing totality checker.
 It is unclear whether this is feasible as a general solution.
-Another approach is to perform the output coverage analysis outside of Twelf.
-It is then necessary to prove at least soundness of the system, since the analysis needs to be trustworthy.
 
-% note that it is unclear what the ``user interface'' should be
-% also: may need to include mode checking in analysis (for void case)
+Another, more satisfying approach is to perform the output coverage analysis outside of Twelf.
+The system should then be able to verify that the original evaluation relation is total (and deterministic).
+And since it should be trustworthy, it is necessary to argue at least for soundness.
 
 \section*{Learning Objectives}
 
@@ -190,6 +198,29 @@ It is then necessary to prove at least soundness of the system, since the analys
 Frank Pfenning, Carsten Sch\"{u}rmann.
 \textit{System Description: Twelf --- A Meta-Logical Framework for Deductive Systems}.
 In \textit{Proceedings of the 16th International Conference on Automated Deduction}, pages 202-206, 1999.
+
+\bibitem{OutputCoverage}
+Twelf Home Page.
+\textit{Coverage checking}.
+Available at \\
+\verb|http://twelf.org/w/index.php?title=Coverage_checking&oldid=6507|
+
+\bibitem{TwelfUserGuide}
+Frank Pfenning, Carsten Sch\"{u}rmann.
+\textit{Twelf User's Guide, Version 1.4}.
+Available at \\
+\verb|http://twelf.org/w/index.php?title=User%27s_Guide&oldid=4534|
+
+\bibitem{SchurmannPfenning03}
+Carsten Sch\"{u}rmann, Frank Pfenning.
+\textit{A Coverage Checking Algorithm for LF}.
+In \textit{Proceedings of the Theorem Proving in Higher Order Logics 16th International Conference}, pages 120-135, 2003.
+
+\bibitem{OutputFactoring}
+Twelf Home Page.
+\textit{Output factoring}.
+Available at \\
+\verb|http://www.twelf.org/w/index.php?title=Output_factoring&oldid=6190|
 
 \end{thebibliography}
 
