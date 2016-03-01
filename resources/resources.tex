@@ -1,0 +1,43 @@
+\documentclass[12pt]{article}
+
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage[pdftex]{graphicx}
+\usepackage{amsmath, amssymb}
+
+\begin{document}
+
+\section*{Resources}
+
+Totality checking in Twelf is mainly described in the user's guide~\cite{Pfe98} and on the home page~\cite{Twelf16}.
+The methods of the different checks that constitute totality checking are presented in (or based on) various papers:
+\begin{itemize}
+	\item Rohwedder and Pfenning present a system for mode and termination checking of Elf programs~\cite{RohPfe96}.
+  \item Pientka improve on termination checking by including reduction checking~\cite{Pie01, Pie06}.
+  \item Sch\"{u}rmann and Pfenning present a coverage checking algorithm~\cite{SchPfe03}.
+  \item Anderson and Pfenning introduce uniqueness checking~\cite{AndPfe04}, which can help in coverage checking.
+\end{itemize}
+
+\noindent Additionally:
+\begin{itemize}
+	\item
+Poswolsky and Sch\"{u}rmann give a solution to the factoring problem~\cite{PosSch03, PosSch03full, PosSch04}, i.e. the problem of having to manually remove backtracking from programs in order to satisfy the output coverage checker.
+The algorithm translates the (Twelf) logic program into a functional language and factors in this setting.
+This seems to have given rise to Delphin~\cite{PosSch09}, a functional language based on LF and HOAS.
+It is unclear why their method is absent from the current Twelf implementation.
+  \item
+Dunfield and Pientka describe coverage checking of contextual objects~\cite{DunPie08, PieXX, PieDun10}, i.e. LF objects that depend on assumptions, as implemented for Beluga~\cite{PieDun10beluga}.
+Like Delphin, Beluga is a functional language based on LF and HOAS.
+Coverage checking may well be an easier problem in a functional setting with pattern matching than in Twelf.
+Nevertheless, it is likely worthwhile to look at how Delphin and Beluga handle the problem.
+  \item
+Wang and Nadathur present a method for extracting explicit proofs from totality checking in a subset of Twelf~\cite{WanNad13}.
+The main point of interest, however, is that they formalise their interpretation of the various steps that constitute totality checking --- including output coverage checking.
+The authors are also associated with the language $\lambda$Prolog~\cite{NadMil88} and, more recently, the Abella theorem prover~\cite{Gac08}.
+\end{itemize}
+
+\bibliography{resources}
+\bibliographystyle{plain}
+
+\end{document}
