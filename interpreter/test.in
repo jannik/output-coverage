@@ -1,0 +1,11 @@
+test.
+
+test
+  <- a
+  <- b
+  <- c.
+
+add z B B.
+
+add (s A) B (s C)
+  <- add A B C.
