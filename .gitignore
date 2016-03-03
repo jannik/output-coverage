@@ -9,3 +9,9 @@
 *.synctex
 
 *.pdf
+
+## haskell auxiliary files
+
+*.o
+*.hi
+*.exe
