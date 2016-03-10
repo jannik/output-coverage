@@ -5,7 +5,7 @@ import Prelude hiding (head, pred)
 import Control.Applicative ((<*>), (<*), (*>), (<$>))
 
 import Text.Parsec.Char (alphaNum, char, lower, spaces, string, upper)
-import Text.Parsec.Combinator (between, eof)
+import Text.Parsec.Combinator (between, eof, sepBy1)
 import Text.Parsec.Error (ParseError)
 import Text.Parsec.Prim ((<|>), many, parse)
 import Text.Parsec.String (Parser)
@@ -16,16 +16,19 @@ type P = Parser
 
 -- Interface
 
-parseFile :: FilePath -> IO (Either ParseError Program)
-parseFile s = parseString <$> readFile s
+parseFile :: FilePath -> IO (Either ParseError (Program, [Query]))
+parseFile = (parseString <$>) . readFile
 
-parseString :: String -> Either ParseError Program
-parseString = parse program ""
+parseString :: String -> Either ParseError (Program, [Query])
+parseString = parse full ""
 
 -- Parsers
 
+full :: P (Program, [Query])
+full = (,) <$> program <*> queries <* eof
+
 program :: P Program
-program = spaces *> clauses <* eof
+program = spaces *> clauses
 
 clauses :: P [Clause]
 clauses = many clause
@@ -52,9 +55,15 @@ term :: P Term
 term = Var <$> ident
     <|> Comp . flip Pred [] <$> atom
     <|> Comp <$> parens pred
-    
+
 ident :: P Ident
 ident = lexeme $ flip Ident 0 <$> upper <:> many alphaNum
+
+queries :: P [Query]
+queries = many query
+
+query :: P Query
+query = symbol "?" *> pred `sepBy1` (symbol ",") <* symbol "."
 
 -- General parser combinators
 

@@ -5,7 +5,22 @@ test
   <- b
   <- c.
 
+nat z.
+
+nat (s A)
+  <- nat A.
+
 add z B B.
 
 add (s A) B (s C)
   <- add A B C.
+
+? test.
+
+? a.
+
+? nat (s (s z)).
+
+? add X X (s (s (s (s z)))).
+
+? add X Y (s (s (s z))).
