@@ -17,11 +17,19 @@ ppClause :: Clause -> String
 ppClause (p :<-: ps) = intercalate "\n  <- " (map ppPred (p : ps)) ++ "."
 
 ppPred :: Pred -> String
-ppPred (Pred f args) = intercalate " " (f : map ppTerm args)
+ppPred (Pred f args) = intercalate " " (f : map ppTerm' args)
+
+ppPred' :: Pred -> String
+ppPred' (Pred f []) = f
+ppPred' p = "(" ++ ppPred p ++ ")"
 
 ppTerm :: Term -> String
 ppTerm (Var i) = ppIdent i
 ppTerm (Comp p) = ppPred p
+
+ppTerm' :: Term -> String
+ppTerm' (Var i) = ppIdent i
+ppTerm' (Comp p) = ppPred' p
 
 ppIdent :: Ident -> String
 ppIdent (Ident s _) = s
