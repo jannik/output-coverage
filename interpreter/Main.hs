@@ -4,10 +4,11 @@ import Control.Monad (forM_)
 
 import System.Environment (getArgs)
 
-import AST (varsQuery)
+import AST (Signature (..), varsQuery)
 import Parser (parseFile)
-import PrettyPrinter
+import PrettyPrinter (ppTypes, ppProgram, ppQuery, ppResult)
 import Prover (prove)
+import TypeCheck (signatureCheck, typeCheck)
 
 main :: IO ()
 main = do
@@ -21,11 +22,19 @@ main' file = do
   res <- parseFile file
   case res of
     Left e -> print e
-    Right (p, qs) -> do
-      print $ Prog p
-      putStrLn "-----"
-      forM_ qs $ \q -> do
-        putStrLn ""
-        putStrLn $ ppQuery q
-        putStrLn $ ppResult (varsQuery q) (prove p q)
-      putStrLn "-----"
+    Right (sig, uprog, qs)
+      | not (signatureCheck sig) -> putStrLn "signature error"
+      | otherwise -> do
+        case typeCheck sig uprog of
+          Left e -> putStrLn e
+          Right prog -> do
+            let (Sig tps _) = sig
+            putStrLn $ ppTypes tps
+            putStrLn ""
+            putStrLn $ ppProgram prog
+            putStrLn "-----"
+            forM_ qs $ \q -> do
+              putStrLn ""
+              putStrLn $ ppQuery q
+              putStrLn $ ppResult (varsQuery q) (prove prog q)
+            putStrLn "-----"

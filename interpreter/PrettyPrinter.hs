@@ -5,44 +5,53 @@ import Data.List (intercalate)
 import AST
 import Unify (Subst)
 
-newtype Prog = Prog Program
+ppTypes :: [Type] -> String
+ppTypes = intercalate "\n" . map ppType
 
-instance Show Prog where
-  show (Prog prog) = ppProgram prog
+ppType :: Type -> String
+ppType (Typ tnam cns) = "%data " ++ tnam ++ " = " ++ intercalate " | " (map ppConstructor cns) ++ "."
+
+ppConstructor :: Constructor -> String
+ppConstructor (Con cnam tpSig) = intercalate " " (cnam : tpSig)
 
 ppProgram :: Program -> String
-ppProgram = intercalate "\n\n" . map ppClause
+ppProgram = intercalate "\n\n" . map ppPredicate
+
+ppPredicate :: Predicate -> String
+ppPredicate (Pred pnam tpSig cls) = pnam ++ " : " ++ intercalate " x " tpSig ++ ".\n\n"
+  ++ intercalate "\n\n" (map ppClause cls)
 
 ppClause :: Clause -> String
-ppClause (p :<-: ps) = intercalate "\n  <- " (map ppPred (p : ps)) ++ "."
+ppClause (Clause an str strs) = ppAnnotation an ++ intercalate "\n  <- " (map ppStructure (str : strs)) ++ "."
 
-ppPred :: Pred -> String
-ppPred (Pred f args) = intercalate " " (f : map ppTerm' args)
+ppAnnotation :: Annotation -> String
+ppAnnotation [] = ""
+ppAnnotation an = "{" ++ intercalate ", " (map (\(vnam, tnam) -> vnam ++ " : " ++ tnam) an) ++ "}\n"
 
-ppPred' :: Pred -> String
-ppPred' (Pred f []) = f
-ppPred' p = "(" ++ ppPred p ++ ")"
+ppStructure :: Structure -> String
+ppStructure (Struct pnam tms) = intercalate " " (pnam : map ppTerm' tms)
 
 ppTerm :: Term -> String
-ppTerm (Var i) = ppIdent i
-ppTerm (Comp p) = ppPred p
+ppTerm (Var x) = ppVariable x
+ppTerm (Comp cnam tms) = intercalate " " (cnam : map ppTerm' tms)
 
 ppTerm' :: Term -> String
-ppTerm' (Var i) = ppIdent i
-ppTerm' (Comp p) = ppPred' p
+ppTerm' (Var x) = ppVariable x
+ppTerm' (Comp cnam []) = cnam
+ppTerm' (Comp cnam tms) = "(" ++ intercalate " " (cnam : map ppTerm' tms) ++ ")"
 
-ppIdent :: Ident -> String
-ppIdent (Ident s _) = s
+ppVariable :: Variable -> String
+ppVariable (vnam, _) = vnam
 
 ppQuery :: Query -> String
-ppQuery ps = "? " ++ intercalate ", " (map ppPred ps) ++ "."
+ppQuery strs = "? " ++ intercalate ", " (map ppStructure strs) ++ "."
 
-ppResult :: [Ident] -> [Subst] -> String
-ppResult ids [] = "No."
-ppResult ids subs = "Yes:\n" ++ intercalate ";\n" (map (ppSubst ids) subs) ++ "."
+ppResult :: [Variable] -> [Subst] -> String
+ppResult _ [] = "No."
+ppResult xs subs = "Yes:\n" ++ intercalate ";\n" (map (ppSubst xs) subs) ++ "."
 
-ppSubst :: [Ident] -> Subst -> String
-ppSubst ids sub =
-  case [ ppIdent id ++ " = " ++ ppTerm (sub id) | id <- ids, sub id /= Var id ] of
+ppSubst :: [Variable] -> Subst -> String
+ppSubst xs sub =
+  case [ ppVariable x ++ " = " ++ ppTerm (sub x) | x <- xs, sub x /= Var x ] of
     [] -> "Empty Substitution"
-    strs -> intercalate ", " strs
+    ss -> intercalate ", " ss

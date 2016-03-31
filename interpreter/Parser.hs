@@ -5,9 +5,9 @@ import Prelude hiding (head, pred)
 import Control.Applicative ((<*>), (<*), (*>), (<$>))
 
 import Text.Parsec.Char (alphaNum, char, lower, spaces, string, upper)
-import Text.Parsec.Combinator (between, eof, sepBy1)
+import Text.Parsec.Combinator (between, eof, sepBy, sepBy1)
 import Text.Parsec.Error (ParseError)
-import Text.Parsec.Prim ((<|>), many, parse)
+import Text.Parsec.Prim ((<|>), many, parse, try)
 import Text.Parsec.String (Parser)
 
 import AST
@@ -16,54 +16,72 @@ type P = Parser
 
 -- Interface
 
-parseFile :: FilePath -> IO (Either ParseError (Program, [Query]))
+parseFile :: FilePath -> IO (Either ParseError (Signature, UProgram, [Query]))
 parseFile = (parseString <$>) . readFile
 
-parseString :: String -> Either ParseError (Program, [Query])
+parseString :: String -> Either ParseError (Signature, UProgram, [Query])
 parseString = parse full ""
 
 -- Parsers
 
-full :: P (Program, [Query])
-full = (,) <$> program <*> queries <* eof
+full :: P (Signature, UProgram, [Query])
+full = (,,) <$> (spaces *> signature) <*> program <*> queries <* eof
 
-program :: P Program
+signature :: P Signature
+signature = Sig <$> types <*> preds
+
+types :: P [Type]
+types = many typ
+
+typ :: P Type
+typ = Typ <$> (try (symbol "%data") *> atom <* symbol "=") <*> con `sepBy` (symbol "|") <* symbol "."
+
+con :: P Constructor
+con = Con <$> atom <*> many atom
+
+preds :: P [(PredName, [TypeName])]
+preds = many pred
+
+pred :: P (PredName, [TypeName])
+pred = (,) <$> (symbol "%pred" *> atom) <*> many atom <* symbol "."
+
+program :: P UProgram
 program = spaces *> clauses
 
-clauses :: P [Clause]
+clauses :: P [UClause]
 clauses = many clause
 
-clause :: P Clause
-clause = (:<-:) <$> head <*> body
+clause :: P UClause
+clause = UClause <$> head <*> body
 
-head :: P Pred
-head = pred
+head :: P UStructure
+head = struct
 
-body :: P [Pred]
-body = many (symbol "<-" *> pred) <* symbol "."
+body :: P [UStructure]
+body = many (symbol "<-" *> struct) <* symbol "."
 
-pred :: P Pred
-pred = Pred <$> atom <*> terms
+struct :: P UStructure
+struct = UStruct <$> atom <*> terms
 
 atom :: P String
-atom = lexeme $ lower <:> many (alphaNum <|> char '/')
+atom = lexeme $ lower <:> many (alphaNum <|> char '/' <|> char '\'')
 
-terms :: P [Term]
+terms :: P [UTerm]
 terms = many term
 
-term :: P Term
-term = Var <$> ident
-    <|> Comp . flip Pred [] <$> atom
-    <|> Comp <$> parens pred
+term :: P UTerm
+term = UVar <$> var
+    <|> flip UComp [] <$> atom
+    <|> (parens $ UComp <$> atom <*> terms)
 
-ident :: P Ident
-ident = lexeme $ flip Ident 0 <$> upper <:> many alphaNum
+var :: P VarName
+var = lexeme $ upper <:> many (alphaNum <|> char '\'')
 
 queries :: P [Query]
-queries = many query
+queries = map (map initVars) <$> many query
 
-query :: P Query
-query = symbol "?" *> pred `sepBy1` (symbol ",") <* symbol "."
+query :: P [UStructure]
+query = symbol "?" *> struct `sepBy1` (symbol ",") <* symbol "."
 
 -- General parser combinators
 

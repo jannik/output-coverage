@@ -1,0 +1,40 @@
+%data nat = z | s nat.
+%data bool = tt | ff.
+%data exp = nconst nat | bconst bool.
+
+%pred add nat nat nat.
+%pred bton bool nat.
+%pred leq nat nat bool.
+%pred eleq exp exp bool.
+
+add z B B.
+add (s A) B (s C)
+  <- add A B C.
+
+bton tt (s z).
+bton ff z.
+
+leq z z tt.
+leq z (s B) tt.
+leq (s A) z ff.
+leq (s A) (s B) C
+  <- leq A B C.
+
+eleq (nconst A) (nconst B) C
+  <- leq A B C.
+eleq (nconst A) (bconst B) C
+  <- bton B B'
+  <- leq A B' C.
+eleq (bconst A) (nconst B) C
+  <- bton A A'
+  <- leq A' B C.
+eleq (bconst A) (bconst B) C
+  <- bton A A'
+  <- bton B B'
+  <- leq A' B' C.
+
+? add (s (s (s z))) (s (s (s z))) X.
+
+? eleq (bconst A) (bconst B) tt.
+
+? eleq (bconst ff) (bconst ff) Y.

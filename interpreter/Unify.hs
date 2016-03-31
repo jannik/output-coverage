@@ -1,40 +1,43 @@
 module Unify where
 
+import Control.Monad (guard)
+
 import AST
 
-type Subst = Ident -> Term
+type Subst = Variable -> Term
 
 emptySubst :: Subst
 emptySubst = Var
 
 infix 4 |->
-(|->) :: Ident -> Term -> Subst
-(i |-> t) j
-  | i == j = t
-  | otherwise = Var j
+(|->) :: Variable -> Term -> Subst
+(x |-> tm) y
+  | x == y = tm
+  | otherwise = Var y
 
 infixr 3 `o`
 o :: Subst -> Subst -> Subst
 a `o` b = applyTerm a . b
 
 applyTerm :: Subst -> Term -> Term
-applyTerm sub (Var i) = sub i
-applyTerm sub (Comp p) = Comp $ applyPred sub p
+applyTerm sub (Var x) = sub x
+applyTerm sub (Comp cnam tms) = Comp cnam $ map (applyTerm sub) tms
 
-applyPred :: Subst -> Pred -> Pred
-applyPred sub (Pred f args) = Pred f $ map (applyTerm sub) args
+applyStructure :: Subst -> Structure -> Structure
+applyStructure sub (Struct pnam tms) = Struct pnam $ map (applyTerm sub) tms
 
--- find most general unifier (result is either a singleton list or empty)
-unify :: Term -> Term -> [Subst]
-unify (Var i) (Var j) = [if i == j then emptySubst else i |-> Var j]
-unify (Var i) t2 = [ i |-> t2 | i `notElem` varsTerm t2 ]
-unify t1 (Var j) = [ j |-> t1 | j `notElem` varsTerm t1 ]
-unify (Comp (Pred f1 args1)) (Comp (Pred f2 args2)) = [ sub | f1 == f2, sub <- listUnify args1 args2 ]
+-- find most general unifier
+unify :: Term -> Term -> Maybe Subst
+unify (Var x) (Var y) = Just $ if x == y then emptySubst else x |-> Var y
+unify (Var x) tm2 = guard (x `notElem` varsTerm tm2) >> Just (x |-> tm2)
+unify tm1 (Var y) = guard (y `notElem` varsTerm tm1) >> Just (y |-> tm1)
+unify (Comp cnam1 tms1) (Comp cnam2 tms2) = guard (cnam1 == cnam2) >> listUnify tms1 tms2
 
-listUnify :: [Term] -> [Term] -> [Subst]
-listUnify [] [] = [emptySubst]
-listUnify [] _ = []
-listUnify _ [] = []
-listUnify (t1 : ts1) (t2 : ts2) =
-  [ sub2 `o` sub1 | sub1 <- unify t1 t2
-                  , sub2 <- listUnify (map (applyTerm sub1) ts1) (map (applyTerm sub1) ts2) ]
+listUnify :: [Term] -> [Term] -> Maybe Subst
+listUnify [] [] = Just emptySubst
+listUnify [] _ = Nothing
+listUnify _ [] = Nothing
+listUnify (tm1 : tms1) (tm2 : tms2) = do
+  sub1 <- unify tm1 tm2
+  sub2 <- listUnify (map (applyTerm sub1) tms1) (map (applyTerm sub1) tms2)
+  Just $ sub2 `o` sub1
