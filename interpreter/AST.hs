@@ -1,9 +1,9 @@
 module AST where
 
-import Data.List (nub)
+import Data.List (find, nub)
 
 type Program = [Predicate]
-data Predicate = Pred PredName [TypeName] [Clause] deriving (Eq, Show)
+data Predicate = Pred PredName [TypeName] Mode [Clause] deriving (Eq, Show)
 type PredName = String
 type TypeName = String
 data Clause = Clause Annotation Structure [Structure] deriving (Eq, Show)
@@ -21,9 +21,12 @@ data UTerm = UVar VarName | UComp ConName [UTerm] deriving (Eq, Show)
 
 type Query = [Structure]
 
-data Signature = Sig [Type] [(PredName, [TypeName])] deriving (Eq, Show)
+data Signature = Sig [Type] [(PredName, [TypeName], Mode)] deriving (Eq, Show)
 data Type = Typ TypeName [Constructor] deriving (Eq, Show)
 data Constructor = Con ConName [TypeName] deriving (Eq, Show)
+
+type Mode = [Polarity]
+data Polarity = In | Out | None deriving (Eq, Show)
 
 structureToTerm :: Structure -> Term
 structureToTerm (Struct pnam tms) = Comp pnam tms

@@ -15,7 +15,7 @@ growTree prog = grow 1 emptySubst
     grow _ sub [] = Done sub
     grow n sub (g : gs) = Choice
       [ grow (n + 1) (sub' `o` sub) (map (applyStructure sub') (strs ++ gs))
-      | let (Struct pnam _) = g, (Pred pnam' _ cls) <- prog, pnam' == pnam
+      | let (Struct pnam _) = g, (Pred pnam' _ _ cls) <- prog, pnam' == pnam
       , (Clause _ str strs) <- map (renameVars n) cls, Just sub' <- [unify (structureToTerm g) (structureToTerm str)] ]
 
 -- depth-first search

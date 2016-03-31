@@ -8,6 +8,7 @@ import AST
 
 type TypingError = String
 
+-- todo: add proper error handling
 signatureCheck :: Signature -> Bool
 signatureCheck (Sig tps preds) = noNameClashes && conAnnotsOK && predAnnotsOK
   where
@@ -18,7 +19,7 @@ signatureCheck (Sig tps preds) = noNameClashes && conAnnotsOK && predAnnotsOK
     conNames = [cnam | (Typ _ cns) <- tps, (Con cnam _) <- cns]
     
     predNames :: [PredName]
-    predNames = map fst preds
+    predNames = map (\(pnam, _, _) -> pnam) preds
     
     allNames :: [String]
     allNames = typeNames ++ conNames ++ predNames
@@ -30,14 +31,15 @@ signatureCheck (Sig tps preds) = noNameClashes && conAnnotsOK && predAnnotsOK
     conAnnotsOK = all (`elem` typeNames) [tp' | (Typ _ cns) <- tps, (Con _ tps') <- cns, tp' <- tps']
     
     predAnnotsOK :: Bool
-    predAnnotsOK = all (`elem` typeNames) $ concatMap snd preds
+    predAnnotsOK = (all (`elem` typeNames) $ concatMap (\(_, tpSig, _) -> tpSig) preds)
+                && (all (\(_, tpSig, mo) -> length tpSig == length mo) preds)
 
 typeCheck :: Signature -> UProgram -> Either TypingError Program
 typeCheck (Sig tps preds) uprog = do
   cls <- mapM checkClause uprog
   (cls', preds') <- foldM buildPred (cls, []) preds
   guard $ null cls' -- sanity check; should always be the case
-  return preds'
+  Right preds'
   
   where
     checkClause :: UClause -> Either TypingError Clause
@@ -47,7 +49,7 @@ typeCheck (Sig tps preds) uprog = do
     checkStructs :: [UStructure] -> Annotation -> Either TypingError Annotation
     checkStructs [] an = Right an
     checkStructs ((UStruct pnam tms) : strs) an = do
-      (_, tpSig) <- maybeToEither ("no signature for predicate " ++ pnam) (find (\(pnam', _) -> pnam' == pnam) preds)
+      (_, tpSig, _) <- maybeToEither ("no signature for predicate " ++ pnam) (find (\(pnam', _, _) -> pnam' == pnam) preds)
       an' <- matchList tms tpSig an
       checkStructs strs an'
     
@@ -68,8 +70,8 @@ typeCheck (Sig tps preds) uprog = do
       Con _ tpSig <- maybeToEither ("no signature for constructor " ++ cnam ++ " in type " ++ tnam) (find (\(Con cnam' _) -> cnam' == cnam) cns)
       matchList tms tpSig an
     
-    buildPred :: ([Clause], [Predicate]) -> (PredName, [TypeName]) -> Either TypingError ([Clause], [Predicate])
-    buildPred ([], _) (pnam, _) = Left $ "no clauses for predicate " ++ pnam
-    buildPred (cls, preds') (pnam, tps') =
+    buildPred :: ([Clause], [Predicate]) -> (PredName, [TypeName], Mode) -> Either TypingError ([Clause], [Predicate])
+    buildPred ([], _) (pnam, _, _) = Left $ "no clauses for predicate " ++ pnam
+    buildPred (cls, preds') (pnam, tps', mo) =
       let (relevantCls, remainingCls) = partition (\(Clause _ (Struct pnam' _) _) -> pnam' == pnam) cls
-      in Right (remainingCls, Pred pnam tps' relevantCls : preds')
+      in Right (remainingCls, Pred pnam tps' mo relevantCls : preds')

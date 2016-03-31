@@ -2,7 +2,7 @@ module Parser where
 
 import Prelude hiding (head, pred)
 
-import Control.Applicative ((<*>), (<*), (*>), (<$>))
+import Control.Applicative ((<*>), (<*), (*>), (<$>), (<$))
 
 import Text.Parsec.Char (alphaNum, char, lower, spaces, string, upper)
 import Text.Parsec.Combinator (between, eof, sepBy, sepBy1)
@@ -39,11 +39,19 @@ typ = Typ <$> (try (symbol "%data") *> atom <* symbol "=") <*> con `sepBy` (symb
 con :: P Constructor
 con = Con <$> atom <*> many atom
 
-preds :: P [(PredName, [TypeName])]
+preds :: P [(PredName, [TypeName], Mode)]
 preds = many pred
 
-pred :: P (PredName, [TypeName])
-pred = (,) <$> (symbol "%pred" *> atom) <*> many atom <* symbol "."
+pred :: P (PredName, [TypeName], Mode)
+pred = do
+  symbol "%pred"
+  pnam <- atom
+  (mo, tpSig) <- unzip <$> many ((,) <$> polarity <*> atom)
+  symbol "."
+  return (pnam, tpSig, mo)
+
+polarity :: P Polarity
+polarity = (In <$ symbol "+") <|> (Out <$ symbol "-") <|> (None <$ symbol "*")
 
 program :: P UProgram
 program = spaces *> clauses

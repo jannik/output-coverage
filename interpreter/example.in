@@ -2,10 +2,10 @@
 %data bool = tt | ff.
 %data exp = nconst nat | bconst bool.
 
-%pred add nat nat nat.
-%pred bton bool nat.
-%pred leq nat nat bool.
-%pred eleq exp exp bool.
+%pred add +nat +nat -nat.
+%pred bton +bool -nat.
+%pred leq +nat +nat -bool.
+%pred eleq +exp +exp -bool.
 
 add z B B.
 add (s A) B (s C)

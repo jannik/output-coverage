@@ -18,8 +18,15 @@ ppProgram :: Program -> String
 ppProgram = intercalate "\n\n" . map ppPredicate
 
 ppPredicate :: Predicate -> String
-ppPredicate (Pred pnam tpSig cls) = pnam ++ " : " ++ intercalate " x " tpSig ++ ".\n\n"
-  ++ intercalate "\n\n" (map ppClause cls)
+ppPredicate (Pred pnam tpSig mo cls) =
+  pnam ++ " : " ++ intercalate " x " tpSig ++ ".\n"
+    ++ "%mode " ++ pnam ++ " " ++ intercalate " " (map ppPolarity mo) ++ ".\n\n"
+    ++ intercalate "\n\n" (map ppClause cls)
+
+ppPolarity :: Polarity -> String
+ppPolarity In = "+"
+ppPolarity Out = "-"
+ppPolarity None = "*"
 
 ppClause :: Clause -> String
 ppClause (Clause an str strs) = ppAnnotation an ++ intercalate "\n  <- " (map ppStructure (str : strs)) ++ "."

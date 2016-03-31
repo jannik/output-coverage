@@ -1,10 +1,11 @@
 module Main where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, guard)
 
 import System.Environment (getArgs)
 
 import AST (Signature (..), varsQuery)
+import ModeCheck (modeCheck)
 import Parser (parseFile)
 import PrettyPrinter (ppTypes, ppProgram, ppQuery, ppResult)
 import Prover (prove)
@@ -37,4 +38,8 @@ main' file = do
               putStrLn ""
               putStrLn $ ppQuery q
               putStrLn $ ppResult (varsQuery q) (prove prog q)
+            putStrLn "-----"
+            putStrLn ""
+            guard $ modeCheck prog
+            putStrLn "mode check successful"
             putStrLn "-----"
