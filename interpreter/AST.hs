@@ -57,3 +57,7 @@ renameVars n (Clause an str strs) = Clause an (renameVarsStructure n str) (map (
     renameVarsTerm :: Int -> Term -> Term
     renameVarsTerm n (Var (vnam, _)) = Var (vnam, n)
     renameVarsTerm n (Comp cnam tms) = Comp cnam $ map (renameVarsTerm n) tms
+
+termDepth :: Term -> Int
+termDepth (Var _) = 0
+termDepth (Comp _ tms) = 1 + maximum (0 : map termDepth tms)

@@ -1,10 +1,11 @@
 module Main where
 
-import Control.Monad (forM_, guard)
+import Control.Monad (forM_)
 
 import System.Environment (getArgs)
 
 import AST (Signature (..), varsQuery)
+import InputCoverage (inputCoverageCheck)
 import ModeCheck (modeCheck)
 import Parser (parseFile)
 import PrettyPrinter (ppTypes, ppProgram, ppQuery, ppResult)
@@ -40,6 +41,12 @@ main' file = do
               putStrLn $ ppResult (varsQuery q) (prove prog q)
             putStrLn "-----"
             putStrLn ""
-            guard $ modeCheck prog
-            putStrLn "mode check successful"
+            if modeCheck prog
+              then putStrLn "mode check successful"
+              else putStrLn "mode error (2)"
             putStrLn "-----"
+            putStrLn ""
+            if inputCoverageCheck tps prog
+              then putStrLn "input coverage check successful"
+              else putStrLn "input coverage error"
+            putStrLn "-----"  

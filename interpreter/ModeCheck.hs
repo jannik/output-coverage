@@ -24,10 +24,10 @@ outVars prog (Struct pnam tms) =
 
 -- unsafe, todo: add proper error handling
 modeCheck :: Program -> Bool
-modeCheck prog = all checkPredicates prog
+modeCheck prog = all checkPredicate prog
   where
-    checkPredicates :: Predicate -> Bool
-    checkPredicates (Pred _ _ _ cls) = all checkClause cls
+    checkPredicate :: Predicate -> Bool
+    checkPredicate (Pred _ _ _ cls) = all checkClause cls
     
     checkClause :: Clause -> Bool
     checkClause (Clause _ str strs) = all (`elem` (checkStructs strs (inVars prog str))) (outVars prog str)
