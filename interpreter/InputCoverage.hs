@@ -66,7 +66,7 @@ inputCoverageCheck tps prog = all checkPredicate prog
   where
     checkPredicate :: Predicate -> Bool
     checkPredicate (Pred pnam tpSig mo cls) =
-      let maxDpth = maxDepth mo cls
+      let maxDpth = 1 + maxDepth mo cls
           heads = map (\(Clause _ str _) -> str) cls
           (i, svars, tms) = initTerms 0 $ zip mo tpSig
           str = (Struct pnam tms)

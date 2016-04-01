@@ -71,7 +71,6 @@ typeCheck (Sig tps preds) uprog = do
       matchList tms tpSig an
     
     buildPred :: ([Clause], [Predicate]) -> (PredName, [TypeName], Mode) -> Either TypingError ([Clause], [Predicate])
-    buildPred ([], _) (pnam, _, _) = Left $ "no clauses for predicate " ++ pnam
     buildPred (cls, preds') (pnam, tps', mo) =
       let (relevantCls, remainingCls) = partition (\(Clause _ (Struct pnam' _) _) -> pnam' == pnam) cls
       in Right (remainingCls, Pred pnam tps' mo relevantCls : preds')

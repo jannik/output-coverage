@@ -19,7 +19,7 @@ ppProgram = intercalate "\n\n" . map ppPredicate
 
 ppPredicate :: Predicate -> String
 ppPredicate (Pred pnam tpSig mo cls) =
-  pnam ++ " : " ++ intercalate " x " tpSig ++ ".\n"
+  pnam ++ " : " ++ intercalate " x " tpSig ++ " -> type.\n"
     ++ "%mode " ++ pnam ++ " " ++ intercalate " " (map ppPolarity mo) ++ ".\n\n"
     ++ intercalate "\n\n" (map ppClause cls)
 

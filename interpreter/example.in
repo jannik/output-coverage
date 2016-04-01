@@ -1,11 +1,14 @@
 %data nat = z | s nat.
 %data bool = tt | ff.
 %data exp = nconst nat | bconst bool.
+%data void =.
 
 %pred add +nat +nat -nat.
 %pred bton +bool -nat.
 %pred leq +nat +nat -bool.
-%pred eleq +exp +exp -bool.
+%pred eleq  +exp +exp -bool.
+
+%pred test +void.
 
 add z B B.
 add (s A) B (s C)
