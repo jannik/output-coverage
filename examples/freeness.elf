@@ -1,0 +1,68 @@
+%{ ------------------------------ }%
+%{ example requiring coerce lemma }%
+%{ ------------------------------ }%
+
+
+
+bool : type.
+
+true : bool.
+false : bool.
+
+
+
+eq-bool : bool -> bool -> type.
+
+refl-bool : eq-bool B B.
+
+
+
+not : bool -> bool -> type.
+%mode not +B1 -B2.
+
+not/true : not true false.
+
+not/false : not false true.
+
+
+
+negate : bool -> bool -> type.
+%mode negate +B1 -B2.
+
+negate/true : negate true false.
+
+negate/false : negate false true.
+
+
+
+not-negate-comp' : not B1 B2 -> negate B1 B2' -> eq-bool B2 B2' -> type.
+%mode not-negate-comp' +D1 -D2 -Q.
+
+- : not-negate-comp' not/true negate/true refl-bool.
+
+- : not-negate-comp' not/false negate/false refl-bool.
+
+%worlds () (not-negate-comp' _ _ _).
+%total {} (not-negate-comp' _ _ _).
+
+
+
+coerce-negate : eq-bool B2 B2' -> negate B1 B2' -> negate B1 B2 -> type.
+%mode coerce-negate +Q +D1 -D2.
+
+- : coerce-negate refl-bool D1 D1.
+
+%worlds () (coerce-negate _ _ _).
+%total {} (coerce-negate _ _ _).
+
+
+
+not-negate-comp : not B1 B2 -> negate B1 B2 -> type.
+%mode not-negate-comp +D1 -D2.
+
+- : not-negate-comp D1 D2'
+     <- not-negate-comp' D1 D2 Q
+     <- coerce-negate Q D2 D2'. % necessary to avoid output freeness error
+
+%worlds () (not-negate-comp _ _).
+%total {} (not-negate-comp _ _).

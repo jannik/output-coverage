@@ -1,0 +1,48 @@
+%{ ------------------------- }%
+%{ example requiring %unique }%
+%{ ------------------------- }%
+
+
+
+nat : type.
+
+z : nat.
+s : nat -> nat.
+
+
+
+bool : type.
+
+true : bool.
+false : bool.
+
+
+
+eq-bool : bool -> bool -> type.
+
+refl-bool : eq-bool B B.
+
+
+
+even : nat -> bool -> type.
+%mode even +N -B.
+
+even/z : even z true.
+
+even/s : even (s z) false.
+
+even/ss : even (s (s N)) B
+           <- even N B.
+
+%worlds () (even _ _).
+%unique even +N -1B.
+
+
+
+even-uniq : even N B -> even N B' -> eq-bool B B' -> type.
+%mode even-uniq +D1 +D2 -Q.
+
+- : even-uniq D1 D2 refl-bool.
+
+%worlds () (even-uniq _ _ _).
+%total {} (even-uniq _ _ _). % will fail input coverage check without %unique on even
