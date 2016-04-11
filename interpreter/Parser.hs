@@ -4,10 +4,12 @@ import Prelude hiding (head, pred)
 
 import Control.Applicative ((<*>), (<*), (*>), (<$>), (<$))
 
-import Text.Parsec.Char (alphaNum, char, lower, spaces, string, upper)
-import Text.Parsec.Combinator (between, eof, sepBy, sepBy1)
+import Data.Char (isSpace)
+
+import Text.Parsec.Char (alphaNum, anyChar, char, lower, satisfy, string, upper)
+import Text.Parsec.Combinator (between, eof, many1, manyTill, sepBy, sepBy1)
 import Text.Parsec.Error (ParseError)
-import Text.Parsec.Prim ((<|>), many, parse, try)
+import Text.Parsec.Prim ((<|>), many, parse, skipMany, try)
 import Text.Parsec.String (Parser)
 
 import AST
@@ -44,7 +46,7 @@ preds = many pred
 
 pred :: P (PredName, [TypeName], Mode)
 pred = do
-  symbol "%pred"
+  try (symbol "%pred")
   pnam <- atom
   (mo, tpSig) <- unzip <$> many ((,) <$> polarity <*> atom)
   symbol "."
@@ -92,6 +94,15 @@ query :: P [UStructure]
 query = symbol "?" *> struct `sepBy1` (symbol ",") <* symbol "."
 
 -- General parser combinators
+
+space :: P Char
+space = satisfy isSpace -- <?> "space"
+
+comment :: P String
+comment = try (string "%{") *> manyTill anyChar (try (string "}%"))
+
+spaces :: P ()
+spaces = skipMany (many1 space <|> comment) -- <?> "white space or comment"
 
 lexeme :: P a -> P a
 lexeme = (<* spaces)

@@ -1,3 +1,5 @@
+%{ now with comments }%
+
 %data nat = z | s nat.
 %data bool = tt | ff.
 %data exp = nconst nat | bconst bool.
