@@ -8,7 +8,7 @@
 %pred add +nat +nat -nat.
 %pred bton +bool -nat.
 %pred leq +nat +nat -bool.
-%pred eleq  +exp +exp -bool.
+%pred eleq +exp +exp -bool.
 
 %pred test +void.
 
