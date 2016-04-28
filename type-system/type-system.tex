@@ -1,0 +1,171 @@
+\documentclass[12pt]{article}
+
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage[pdftex]{graphicx}
+
+\usepackage{amsmath, amssymb}
+\usepackage{mathtools} % for Coloneqq
+
+\usepackage{bussproofs}
+
+\newcommand{\ensurecommand}[1]{\providecommand{#1}{}\renewcommand{#1}}
+
+\ensurecommand{\defi}{\Coloneqq}
+\ensurecommand{\alt}{\;\; | \;\;}
+
+\ensurecommand{\type}{\mathtt{type}}
+\ensurecommand{\pi}[3]{\Pi \; \typing{#1}{#2} \, . \; #3}
+\ensurecommand{\app}[2]{#1 \; #2}
+
+\ensurecommand{\sig}{\Sigma}
+\ensurecommand{\ctx}{\Gamma}
+\ensurecommand{\nil}{\cdot}
+\ensurecommand{\cons}[2]{#1 , \, #2}
+\ensurecommand{\typing}[2]{#1 : #2}
+
+\ensurecommand{\upd}[3]{#1[#2 \mapsto #3]}
+\ensurecommand{\sub}[3]{#1[#2 / #3]}
+
+\ensurecommand{\hasType}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\hasKind}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\isType}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{type}}}
+\ensurecommand{\isKind}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{kind}}}
+\ensurecommand{\isSig}[1]{\ensuremath{#1 \; \mathbf{sig}}}
+
+\ensurecommand{\ninf}[1]{\AxiomC{#1}}
+\ensurecommand{\uinf}[1]{\UnaryInfC{#1}}
+\ensurecommand{\binf}[1]{\BinaryInfC{#1}}
+\ensurecommand{\ax}[1]{\ninf{} \uinf{#1}}
+\ensurecommand{\leftl}[1]{\LeftLabel{#1 \;}}
+\ensurecommand{\rulename}{\textsc}
+
+\begin{document}
+
+\section*{Typing Judgements}
+
+\begin{align*}
+  K &\defi \type \alt \pi{x}{P}{K} \\
+  P &\defi a \alt \app{P}{M} \\
+  A &\defi P \alt \pi{x}{P}{A} \\
+  M, N &\defi c \alt x \alt \app{M}{N} \\
+  \\
+  \sig &\defi \nil \alt \cons{\sig}{\typing{a}{K}} \alt \cons{\sig}{\typing{c}{A}} \\
+  \ctx &\defi \nil \alt \cons{\ctx}{\typing{x}{P}}
+\end{align*}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\hasType{\ctx}{M}{A}}
+
+\begin{prooftree}
+  \ninf{$(\typing{c}{A}) \in \sig$}
+  \leftl{\rulename{M-Const} :}
+  \uinf{\hasType{\ctx}{c}{A}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{$(\typing{x}{P}) \in \ctx$}
+  \leftl{\rulename{M-Var} :}
+  \uinf{\hasType{\ctx}{x}{P}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\hasType{\ctx}{M}{(\pi{x}{P}{A}})}
+  \ninf{\hasType{\ctx}{N}{P}}
+  \leftl{\rulename{M-App} :}
+  \binf{\hasType{\ctx}{\app{M}{N}}{\sub{A}{N}{x}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\hasKind{\ctx}{P}{K}}
+
+\begin{prooftree}
+  \ninf{$(\typing{a}{K}) \in \sig$}
+  \leftl{\rulename{P-Atom} :}
+  \uinf{\hasKind{\ctx}{a}{K}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\hasKind{\ctx}{P}{(\pi{x}{P'}{K}})}
+  \ninf{\hasType{\ctx}{M}{P'}}
+  \leftl{\rulename{P-App} :}
+  \binf{\hasKind{\ctx}{\app{P}{M}}{\sub{K}{M}{x}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+\newpage % temp
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\isType{\ctx}{A}}
+
+\begin{prooftree}
+  \ninf{\hasKind{\ctx}{P}{\type}}
+  \leftl{\rulename{A-Prim} :}
+  \uinf{\isType{\ctx}{P}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isType{\ctx}{P}}
+  \ninf{\isType{\upd{\ctx}{x}{P}}{A}}
+  \leftl{\rulename{A-Pi} :}
+  \binf{\isType{\ctx}{\pi{x}{P}{A}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\isKind{\ctx}{K}}
+
+\begin{prooftree}
+  \leftl{\rulename{K-Type} :}
+  \ax{\isKind{\ctx}{\type}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isType{\ctx}{P}}
+  \ninf{\isKind{\upd{\ctx}{x}{P}}{K}}
+  \leftl{\rulename{K-Pi} :}
+  \binf{\isKind{\ctx}{\pi{x}{P}{K}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\isSig{\sig}}
+
+\begin{prooftree}
+  \leftl{\rulename{S-Nil} :}
+  \ax{\isSig{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isSig{\sig}}
+  \ninf{\isKind{\nil}{K}}
+  \leftl{\rulename{S-Kind} :}
+  \binf{\isSig{\cons{\sig}{\typing{a}{K}}}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isSig{\sig}}
+  \ninf{\isType{\nil}{A}}
+  \leftl{\rulename{S-Type} :}
+  \binf{\isSig{\cons{\sig}{\typing{c}{A}}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+\end{document}
