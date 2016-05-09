@@ -1,0 +1,29 @@
+%data void =
+    .
+
+%data nat =
+    z : nat
+  | s : {A : nat} nat.
+
+%data eq {A : nat} {B : nat} =
+    refl : {A : nat} eq A A.
+
+%data add {A : nat} {B : nat} {C : nat} =
+    add/z : {B : nat} add z B B
+  | add/s : {A : nat} {B : nat} {C : nat} {D : add A B C} add (s A) B (s C).
+
+%pred absurd1 +{V : void} -{D : add z z (s z)}.
+
+%pred absurd2 +{Q : eq z (s z)} -{D : add z z (s z)}.
+
+%pred eq-add-z-compat +{A : nat} +{B : nat} +{Q : eq A B} -{D : add z A B}.
+
+%pred add-z-eq-compat +{A : nat} +{B : nat} -{Q : eq A B} +{D : add z A B}.
+
+{A : nat}
+eq-add-z-compat A A (refl A) (add/z A).
+
+{A : nat}
+add-z-eq-compat A A (refl A) (add/z A).
+
+? eq-add-z-compat (s (s z)) (s (s z)) Q D.

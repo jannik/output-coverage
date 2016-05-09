@@ -5,21 +5,30 @@ import Data.List (intercalate)
 import AST
 import Unify (Subst)
 
-ppTypes :: [Type] -> String
-ppTypes = intercalate "\n" . map ppType
+ppTypeFams :: PP a => [TypeFam a] -> String
+ppTypeFams = intercalate "\n\n" . map ppTypeFam
 
-ppType :: Type -> String
-ppType (Typ tnam cns) = "%data " ++ tnam ++ " = " ++ intercalate " | " (map ppConstructor cns) ++ "."
+ppTypeFam :: PP a => TypeFam a -> String
+ppTypeFam (TypeFam tnam deps cns) = "%data " ++ tnam ++ " " ++ ppDependencies deps ++ " =\n    " ++ intercalate "\n  | " (map ppConstructor cns) ++ "."
 
-ppConstructor :: Constructor -> String
-ppConstructor (Con cnam tpSig) = intercalate " " (cnam : tpSig)
+ppDependencies :: PP a => [Dependency a] -> String
+ppDependencies = intercalate " " . map ppDependency
 
-ppProgram :: Program -> String
+ppDependency :: PP a => Dependency a -> String
+ppDependency (x, tp) = "{" ++ pp x ++ " : " ++ ppType tp ++ "}"
+
+ppType :: PP a => Type a -> String
+ppType (Typ tnam tms) = intercalate " " (tnam : map ppTerm' tms)
+
+ppConstructor :: PP a => Constructor a -> String
+ppConstructor (Con cnam deps tp) = cnam ++ " : " ++ ppDependencies deps ++ " " ++ ppType tp
+
+ppProgram :: PP a => Program a -> String
 ppProgram = intercalate "\n\n" . map ppPredicate
 
-ppPredicate :: Predicate -> String
-ppPredicate (Pred pnam tpSig mo cls) =
-  pnam ++ " : " ++ intercalate " x " tpSig ++ " -> type.\n"
+ppPredicate :: PP a => Predicate a -> String
+ppPredicate (Pred pnam deps mo cls) =
+  pnam ++ " : " ++ ppDependencies deps ++ " type.\n"
     ++ "%mode " ++ pnam ++ " " ++ intercalate " " (map ppPolarity mo) ++ ".\n\n"
     ++ intercalate "\n\n" (map ppClause cls)
 
@@ -28,37 +37,34 @@ ppPolarity In = "+"
 ppPolarity Out = "-"
 ppPolarity None = "*"
 
-ppClause :: Clause -> String
-ppClause (Clause an str strs) = ppAnnotation an ++ intercalate "\n  <- " (map ppStructure (str : strs)) ++ "."
+ppClause :: PP a => Clause a -> String
+ppClause (Clause deps str strs) = ppDependencies' deps ++ intercalate "\n  <- " (map ppStructure (str : strs)) ++ "."
 
-ppAnnotation :: Annotation -> String
-ppAnnotation [] = ""
-ppAnnotation an = "{" ++ intercalate ", " (map (\(vnam, tnam) -> vnam ++ " : " ++ tnam) an) ++ "}\n"
+ppDependencies' :: PP a => [Dependency a] -> String
+ppDependencies' [] = ""
+ppDependencies' deps = ppDependencies deps ++ "\n"
 
-ppStructure :: Structure -> String
+ppStructure :: PP a => Structure a -> String
 ppStructure (Struct pnam tms) = intercalate " " (pnam : map ppTerm' tms)
 
-ppTerm :: Term -> String
-ppTerm (Var x) = ppVariable x
+ppTerm :: PP a => Term a -> String
+ppTerm (Var x) = pp x
 ppTerm (Comp cnam tms) = intercalate " " (cnam : map ppTerm' tms)
 
-ppTerm' :: Term -> String
-ppTerm' (Var x) = ppVariable x
+ppTerm' :: PP a => Term a -> String
+ppTerm' (Var x) = pp x
 ppTerm' (Comp cnam []) = cnam
 ppTerm' (Comp cnam tms) = "(" ++ intercalate " " (cnam : map ppTerm' tms) ++ ")"
 
-ppVariable :: Variable -> String
-ppVariable (vnam, _) = vnam
-
-ppQuery :: Query -> String
+ppQuery :: PP a => Query a -> String
 ppQuery strs = "? " ++ intercalate ", " (map ppStructure strs) ++ "."
 
-ppResult :: [Variable] -> [Subst] -> String
+ppResult :: (Eq a, PP a) => [a] -> [Subst a] -> String
 ppResult _ [] = "No."
 ppResult xs subs = "Yes:\n" ++ intercalate ";\n" (map (ppSubst xs) subs) ++ "."
 
-ppSubst :: [Variable] -> Subst -> String
+ppSubst :: (Eq a, PP a) => [a] -> Subst a -> String
 ppSubst xs sub =
-  case [ ppVariable x ++ " = " ++ ppTerm (sub x) | x <- xs, sub x /= Var x ] of
+  case [ pp x ++ " = " ++ ppTerm (sub x) | x <- xs, sub x /= Var x ] of
     [] -> "Empty Substitution"
     ss -> intercalate ", " ss

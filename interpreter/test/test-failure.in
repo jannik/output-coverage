@@ -1,0 +1,9 @@
+%data void1 =
+    .
+
+%data void2 =
+    v2 : {V2 : void2} void2.
+
+%pred foo1 +{V1 : void1}.
+
+%pred foo2 +{V2 : void2}.

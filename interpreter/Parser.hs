@@ -14,83 +14,86 @@ import Text.Parsec.String (Parser)
 
 import AST
 
+type Variable = VarName
+
+type Dependency' = Dependency Variable
+type Type' = Type Variable
+type Clause' = Clause Variable
+type Structure' = Structure Variable
+type Term' = Term Variable
+type Signature' = Signature Variable
+type TypeFam' = TypeFam Variable
+type Constructor' = Constructor Variable
+type Query' = Query Variable
+
 type P = Parser
 
 -- Interface
 
-parseFile :: FilePath -> IO (Either ParseError (Signature, UProgram, [Query]))
+parseFile :: FilePath -> IO (Either ParseError (Signature', [Clause'], [Query']))
 parseFile = (parseString <$>) . readFile
 
-parseString :: String -> Either ParseError (Signature, UProgram, [Query])
+parseString :: String -> Either ParseError (Signature', [Clause'], [Query'])
 parseString = parse full ""
 
 -- Parsers
 
-full :: P (Signature, UProgram, [Query])
-full = (,,) <$> (spaces *> signature) <*> program <*> queries <* eof
+full :: P (Signature', [Clause'], [Query'])
+full = (,,) <$> (spaces *> signature) <*> many clause <*> many query <* eof
 
-signature :: P Signature
-signature = Sig <$> types <*> preds
+signature :: P Signature'
+signature = Sig <$> many typefam <*> many pred
 
-types :: P [Type]
-types = many typ
+typefam :: P TypeFam'
+typefam = TypeFam <$> (try (symbol "%data") *> atom)
+                  <*> (many dep <* symbol "=")
+                  <*> con `sepBy` (symbol "|") <* symbol "."
 
-typ :: P Type
-typ = Typ <$> (try (symbol "%data") *> atom <* symbol "=") <*> con `sepBy` (symbol "|") <* symbol "."
+dep :: P Dependency'
+dep = braces $ (,) <$> (var <* symbol ":") <*> typ
 
-con :: P Constructor
-con = Con <$> atom <*> many atom
+typ :: P Type'
+typ = Typ <$> atom <*> many term
 
-preds :: P [(PredName, [TypeName], Mode)]
-preds = many pred
+con :: P Constructor'
+con = Con <$> (atom <* symbol ":") <*> many dep <*> typ
 
-pred :: P (PredName, [TypeName], Mode)
+pred :: P (PredName, [Dependency'], Mode)
 pred = do
   try (symbol "%pred")
   pnam <- atom
-  (mo, tpSig) <- unzip <$> many ((,) <$> polarity <*> atom)
+  (mo, tpSig) <- unzip <$> many ((,) <$> polarity <*> dep)
   symbol "."
   return (pnam, tpSig, mo)
 
 polarity :: P Polarity
 polarity = (In <$ symbol "+") <|> (Out <$ symbol "-") <|> (None <$ symbol "*")
 
-program :: P UProgram
-program = spaces *> clauses
+clause :: P Clause'
+clause = Clause <$> many dep <*> head <*> body
 
-clauses :: P [UClause]
-clauses = many clause
-
-clause :: P UClause
-clause = UClause <$> head <*> body
-
-head :: P UStructure
+head :: P Structure'
 head = struct
 
-body :: P [UStructure]
+body :: P [Structure']
 body = many (symbol "<-" *> struct) <* symbol "."
 
-struct :: P UStructure
-struct = UStruct <$> atom <*> terms
+struct :: P Structure'
+struct = Struct <$> atom <*> many term
 
 atom :: P String
-atom = lexeme $ lower <:> many (alphaNum <|> char '/' <|> char '\'')
+atom = lexeme $ lower <:> many (alphaNum <|> char '-' <|> char '/' <|> char '\'')
 
-terms :: P [UTerm]
-terms = many term
-
-term :: P UTerm
-term = UVar <$> var
-    <|> flip UComp [] <$> atom
-    <|> (parens $ UComp <$> atom <*> terms)
+term :: P Term'
+term = Var <$> var
+    <|> (try $ parens $ Var <$> var)
+    <|> flip Comp [] <$> atom
+    <|> (parens $ Comp <$> atom <*> many term)
 
 var :: P VarName
 var = lexeme $ upper <:> many (alphaNum <|> char '\'')
 
-queries :: P [Query]
-queries = map (map initVars) <$> many query
-
-query :: P [UStructure]
+query :: P [Structure']
 query = symbol "?" *> struct `sepBy1` (symbol ",") <* symbol "."
 
 -- General parser combinators
@@ -112,6 +115,9 @@ symbol = lexeme . string
 
 parens :: P a -> P a
 parens = between (symbol "(") (symbol ")")
+
+braces :: P a -> P a
+braces = between (symbol "{") (symbol "}")
 
 -- Misc
 

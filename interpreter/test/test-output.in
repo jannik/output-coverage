@@ -1,0 +1,20 @@
+%data val =
+    true : val
+  | false : val.
+
+%data exp =
+    const : {T : val} exp
+  | neg : {B : exp} exp.
+
+%pred eval +{B : exp} -{T : val}.
+
+{T : val}
+eval (const T) T.
+
+{B : exp}
+eval (neg B) false
+  <- eval B true.
+
+{B : exp}
+eval (neg B) true
+  <- eval B false.

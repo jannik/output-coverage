@@ -4,13 +4,13 @@ import Control.Monad (forM_)
 
 import System.Environment (getArgs)
 
-import AST (Signature (..), varsQuery)
+import AST (Signature (..), initVar, varsQuery)
 import InputCoverage (inputCoverageCheck)
 import ModeCheck (modeCheck)
 import Parser (parseFile)
-import PrettyPrinter (ppTypes, ppProgram, ppQuery, ppResult)
+import PrettyPrinter (ppTypeFams, ppProgram, ppQuery, ppResult)
 import Prover (prove)
-import TypeCheck (signatureCheck, typeCheck)
+import TypeCheck (buildPredicates, namesOK, typeCheck)
 
 main :: IO ()
 main = do
@@ -24,21 +24,22 @@ main' file = do
   res <- parseFile file
   case res of
     Left e -> print e
-    Right (sig, uprog, qs)
-      | not (signatureCheck sig) -> putStrLn "signature error"
+    Right (sig, cls, qs)
+      | not (namesOK sig) -> putStrLn "name error"
       | otherwise -> do
-        case typeCheck sig uprog of
-          Left e -> putStrLn e
-          Right prog -> do
-            let (Sig tps _) = sig
-            putStrLn $ ppTypes tps
+        let prog = buildPredicates cls sig
+        let (Sig fams _) = sig
+        case typeCheck fams prog of
+          Left e -> putStrLn $ "Type error: " ++ e
+          Right _ -> do
+            putStrLn $ ppTypeFams fams
             putStrLn ""
             putStrLn $ ppProgram prog
             putStrLn "-----"
             forM_ qs $ \q -> do
               putStrLn ""
               putStrLn $ ppQuery q
-              putStrLn $ ppResult (varsQuery q) (prove prog q)
+              putStrLn $ ppResult (map initVar $ varsQuery q) (prove prog q)
             putStrLn "-----"
             putStrLn ""
             if modeCheck prog
@@ -46,7 +47,8 @@ main' file = do
               else putStrLn "mode error (2)"
             putStrLn "-----"
             putStrLn ""
-            if inputCoverageCheck tps prog
-              then putStrLn "input coverage check successful"
-              else putStrLn "input coverage error"
-            putStrLn "-----"  
+            case inputCoverageCheck fams prog of
+              Left e -> putStrLn $ "Input coverage error: " ++ e
+              Right _ -> do
+                putStrLn "input coverage check successful"
+                putStrLn "-----"

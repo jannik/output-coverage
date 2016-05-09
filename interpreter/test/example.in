@@ -1,0 +1,54 @@
+%{ now with comments }%
+
+%data nat = z : nat | s : {A : nat} nat.
+%data bool = tt : bool | ff : bool.
+%data exp = nconst : {A : nat} exp | bconst : {B : bool} exp.
+%data void = .
+
+%pred add +{A : nat} +{B : nat} -{C : nat}.
+%pred bton +{A : bool} -{B : nat}.
+%pred leq +{A : nat} +{B : nat} -{C : bool}.
+%pred eleq +{A : exp} +{B : exp} -{C : bool}.
+
+%pred test +{V : void}.
+
+{B : nat}
+add z B B.
+{A : nat} {B : nat} {C : nat}
+add (s A) B (s C)
+  <- add A B C.
+
+bton tt (s z).
+bton ff z.
+
+leq z z tt.
+{B : nat}
+leq z (s B) tt.
+{A : nat}
+leq (s A) z ff.
+{A : nat} {B : nat} {C : bool}
+leq (s A) (s B) C
+  <- leq A B C.
+
+{A : nat} {B : nat} {C : bool}
+eleq (nconst A) (nconst B) C
+  <- leq A B C.
+{A : nat} {B : bool} {B' : nat} {C : bool}
+eleq (nconst A) (bconst B) C
+  <- bton B B'
+  <- leq A B' C.
+{A : bool} {A' : nat} {B : nat} {C : bool}
+eleq (bconst A) (nconst B) C
+  <- bton A A'
+  <- leq A' B C.
+{A : bool} {A' : nat} {B : bool} {B' : nat} {C : bool}
+eleq (bconst A) (bconst B) C
+  <- bton A A'
+  <- bton B B'
+  <- leq A' B' C.
+
+? add (s (s (s z))) (s (s (s z))) X.
+
+? eleq (bconst A) (bconst B) tt.
+
+? eleq (bconst ff) (bconst ff) Y.

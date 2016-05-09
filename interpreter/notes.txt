@@ -1,0 +1,5 @@
+Consider changing the data structures in AST to records, using prefixes to avoid name clashes, in order to have getter functions for the fields.
+This would avoid ad-hoc solutions, such as (\(TypeFam tnam _ _) -> tnam) in the TypeCheck module.
+
+Note that, by Andrzej's will, I extended the parser to allow superfluous parentheses around variables in terms.
+Consider removing this feature.
