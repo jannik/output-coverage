@@ -1,0 +1,37 @@
+%{ would like to be able to determine these but cannot }%
+
+%data nat =
+    z : nat
+  | s : {A : nat} nat.
+
+%{ (count1 100) non-empty }%
+%data count1 {A : nat} =
+    count1/0 : count1 z
+  | count1/n : {N : nat} {C : count1 N} count1 (s N).
+
+%{ (count2 100) empty }%
+%data count2 {A : nat} =
+    count2/0 : count2 z
+  | count2/n : {N : nat} {C : count2 (s N)} count2 N.
+
+%{ (add 11 100 111) non-empty; (add 11 100 112) empty }%
+%data add {A : nat} {B : nat} {C : nat} =
+    add/z : {B : nat} add z B B
+  | add/s : {A : nat} {B : nat} {C : nat} {D : add A B C} add (s A) B (s C).
+
+%data void1 =
+    .
+
+%data void2 =
+    v2 : {V2 : void2} void2.
+
+%data void3 =
+    v3 : {V1 : void1} void3.
+
+%pred foo1 +{A : nat} -{V1 : add (s z) (s z) z}.
+
+%pred foo2 +{A : nat} -{B : nat}.
+
+{A : nat} {B : nat} {V : add (s z) (s z) z}
+foo2 A B
+  <- foo1 A V.

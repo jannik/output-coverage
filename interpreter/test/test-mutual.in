@@ -1,0 +1,26 @@
+%data nat =
+    z : nat
+  | s : {A : nat} nat.
+
+%data even {A : nat} =
+    even/z : even z
+  | even/s : {A : nat} {DE : odd A} even (s A).
+
+%data odd {A : nat} =
+    odd/s : {A : nat} {DE : even A} odd (s A).
+
+%{
+%pred even +{A : nat}.
+
+%pred odd +{A : nat}.
+
+even z.
+
+{A : nat}
+even (s A)
+  <- odd A.
+
+{A : nat}
+odd (s A)
+  <- even A.
+}%

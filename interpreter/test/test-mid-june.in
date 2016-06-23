@@ -1,0 +1,66 @@
+%data t =
+    a : t
+  | b : t.
+
+%data reqt {T : t} {T' : t} =
+    reqt/ : {T : t} reqt T T.
+
+%data iseqt {T : t} {T' : t} =
+    iseqt/a : iseqt a a
+  | iseqt/b : iseqt b b.
+
+%data u =
+    f : {T : t} u.
+
+%data requ {U : u} {U' : u} =
+    requ/ : {U : u} requ U U.
+
+%data isequ {U : u} {U' : u} =
+    isequ/f : {T : t} {T' : t} {I : iseqt T T'} isequ (f T) (f T').
+
+
+
+%pred thmt +{T : t} +{T' : t} +{I : iseqt T T'} -{Q : reqt T T'}.
+
+%pred thmu1 +{U : u} +{U' : u} +{I : isequ U U'} -{Q : requ U U'}.
+%{ %pred thmu2 +{U : u} +{U' : u} +{I : isequ U U'} -{Q : requ U U'}. }%
+%pred thmu3 +{U : u} +{U' : u} +{I : isequ U U'} -{Q : requ U U'}.
+%pred thmu4 +{U : u} +{U' : u} +{I : isequ U U'} -{Q : requ U U'}.
+
+%pred cong-f +{T : t} +{T' : t} +{Q : reqt T T'} -{Q' : requ (f T) (f T')}.
+
+
+
+thmt a a iseqt/a (reqt/ a).
+thmt b b iseqt/b (reqt/ b).
+
+{T : t} {I : iseqt T T}
+thmu1 (f T) (f T) (isequ/f T T I) (requ/ (f T)).
+
+%{
+unlike in twelf, this gives an output freeness error.
+how exactly does twelf do freeness differently than me?
+
+{T : t} {I : iseqt T T}
+thmu2 (f T) (f T) (isequ/f T T I) (requ/ (f T))
+  <- thmt T T I (reqt/ T).
+}%
+
+{U : u} {I : isequ U U}
+thmu3 U U I (requ/ U).
+
+%{
+type error, like in twelf, but this is perhaps what we would like to write.
+
+{T : t} {T' : t} {I : iseqt T T'}
+thmu4 (f T) (f T') (isequ/f T T' I) (requ/ (f T))
+  <- thmt T T' I (reqt/ T).
+}%
+
+{T : t}
+cong-f T T (reqt/ T) (requ/ (f T)).
+
+{T : t} {T' : t} {I : iseqt T T'} {Q : reqt T T'} {Q' : requ (f T) (f T')}
+thmu4 (f T) (f T') (isequ/f T T' I) Q'
+  <- thmt T T' I Q
+  <- cong-f T T' Q Q'.

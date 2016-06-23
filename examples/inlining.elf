@@ -1,0 +1,120 @@
+t : type.
+
+a : t.
+b : t.
+
+
+
+reqt : t -> t -> type.
+
+reqt/ : {T} reqt T T.
+
+
+
+iseqt : t -> t -> type.
+
+iseqt/a : iseqt a a.
+iseqt/b : iseqt b b.
+
+
+
+thmt : {T} {T'} iseqt T T' -> reqt T T' -> type.
+%mode thmt +T +T' +I -Q.
+
+thmt/a : thmt a a iseqt/a (reqt/ a).
+thmt/b : thmt b b iseqt/b (reqt/ b).
+
+%worlds () (thmt _ _ _ _).
+%total {} (thmt _ _ _ _).
+
+
+
+u : type.
+
+f : t -> u.
+
+
+
+requ : u -> u -> type.
+
+requ/ : {U} requ U U.
+
+
+
+isequ : u -> u -> type.
+
+isequ/f : {T} {T'} iseqt T T' -> isequ (f T) (f T').
+
+
+
+thmu1 : {U} {U'} isequ U U' -> requ U U' -> type.
+%mode thmu1 +U +U' +I -Q.
+
+thmu1/f : {T} {I : iseqt T T}
+          thmu1 (f T) (f T) (isequ/f T T I) (requ/ (f T)).
+
+%worlds () (thmu1 _ _ _ _).
+%total {} (thmu1 _ _ _ _).
+
+
+
+thmu2 : {U} {U'} isequ U U' -> requ U U' -> type.
+%mode thmu2 +U +U' +I -Q.
+
+thmu2/f : {T} {I : iseqt T T}
+           thmu2 (f T) (f T) (isequ/f T T I) (requ/ (f T))
+           <- thmt T T I (reqt/ T).
+
+%worlds () (thmu2 _ _ _ _).
+%total {} (thmu2 _ _ _ _).
+
+
+
+thmu3 : {U} {U'} isequ U U' -> requ U U' -> type.
+%mode thmu3 +U +U' +I -Q.
+
+thmu3/ : {U} {I : isequ U U}
+          thmu3 U U I (requ/ U).
+
+%worlds () (thmu3 _ _ _ _).
+%total {} (thmu3 _ _ _ _).
+
+
+
+%{
+type error as usual:
+
+thmu4 : {U} {U'} isequ U U' -> requ U U' -> type.
+%mode thmu4 +U +U' +I -Q.
+
+thmu4/f : {T} {T'} {I : iseqt T T'}
+           thmu4 (f T) (f T') (isequ/f T T' I) (requ/ (f T))
+           <- thmt T T' I (reqt/ T).
+
+%worlds () (thmu4 _ _ _ _).
+%total {} (thmu4 _ _ _ _).
+}%
+
+
+
+cong-f : {T} {T'} reqt T T' -> requ (f T) (f T') -> type.
+%mode cong-f +T +T' +Q -Q'.
+
+cong-f/ : cong-f T T (reqt/ T) (requ/ (f T)).
+
+%worlds () (cong-f _ _ _ _).
+%total {} (cong-f _ _ _ _).
+
+
+
+thmu4 : {U} {U'} isequ U U' -> requ U U' -> type.
+%mode thmu4 +U +U' +I -Q.
+
+thmu4/f : {T} {T'} {I : iseqt T T'}
+           {Q : reqt T T'} {Q' : requ (f T) (f T')}
+           thmu4 (f T) (f T') (isequ/f T T' I) Q'
+           <- thmt T T' I Q
+           <- cong-f T T' Q Q'.
+
+%worlds () (thmu4 _ _ _ _).
+%total {} (thmu4 _ _ _ _).

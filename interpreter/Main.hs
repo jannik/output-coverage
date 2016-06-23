@@ -7,6 +7,8 @@ import System.Environment (getArgs)
 import AST (Signature (..), initVar, varsQuery)
 import InputCoverage (inputCoverageCheck)
 import ModeCheck (modeCheck)
+import OutputCoverage (outputCoverageCheck)
+import OutputFreeness (outputFreenessCheck)
 import Parser (parseFile)
 import PrettyPrinter (ppTypeFams, ppProgram, ppQuery, ppResult)
 import Prover (prove)
@@ -29,8 +31,8 @@ main' file = do
       | otherwise -> do
         let prog = buildPredicates cls sig
         let (Sig fams _) = sig
-        case typeCheck fams prog of
-          Left e -> putStrLn $ "Type error: " ++ e
+        case typeCheck fams prog of --Right () of
+          Left e -> putStrLn $ "type error: " ++ e
           Right _ -> do
             putStrLn $ ppTypeFams fams
             putStrLn ""
@@ -42,13 +44,27 @@ main' file = do
               putStrLn $ ppResult (map initVar $ varsQuery q) (prove prog q)
             putStrLn "-----"
             putStrLn ""
-            if modeCheck prog
-              then putStrLn "mode check successful"
-              else putStrLn "mode error (2)"
-            putStrLn "-----"
-            putStrLn ""
-            case inputCoverageCheck fams prog of
-              Left e -> putStrLn $ "Input coverage error: " ++ e
+            case modeCheck fams prog of
+              Left e -> putStrLn $ "mode error: " ++ e
               Right _ -> do
-                putStrLn "input coverage check successful"
+                putStrLn "mode check successful"
                 putStrLn "-----"
+                putStrLn ""
+                case inputCoverageCheck fams prog of
+                  Left e -> putStrLn $ "input coverage error: " ++ e
+                  Right _ -> do
+                    putStrLn "input coverage check successful"
+                    putStrLn "-----"
+                    putStrLn ""
+                    case outputCoverageCheck fams prog of
+                      Left e -> putStrLn $ "output coverage error: " ++ e
+                      Right _ -> do
+                        putStrLn "output coverage check successful"
+                        putStrLn "-----"
+                        putStrLn ""
+                        if not (outputFreenessCheck prog)
+                          then putStrLn "output freeness error"
+                          else do
+                            putStrLn "output freeness check successful"
+                            putStrLn "-----"
+                            putStrLn ""

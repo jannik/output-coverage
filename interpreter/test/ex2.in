@@ -1,0 +1,36 @@
+%data val =
+    true : val
+  | false : val.
+
+%data exp =
+    const : {T : val} exp
+  | neg : {B : exp} exp.
+
+%data eval {B : exp} {T : val} =
+    eval/const : {T : val} eval (const T) T
+  | eval/neg-t : {B : exp} {E : eval B true} eval (neg B) false
+  | eval/neg-f : {B : exp} {E : eval B false} eval (neg B) true.
+
+%data eq-val {T1 : val} {T2 : val} =
+    eq-val/refl : {T : val} eq-val T T.
+
+%pred eval-uniq +{B : exp} +{T : val} +{T' : val} +{E1 : eval B T} +{E2 : eval B T'} -{Q : eq-val T T'}.
+
+{T1 : val}
+eval-uniq (const T1) T1 T1 (eval/const T1) (eval/const T1) (eq-val/refl T1).
+
+{B1 : exp} {E1 : eval B1 true} {E2 : eval B1 true}
+eval-uniq (neg B1) false false (eval/neg-t B1 E1) (eval/neg-t B1 E2) (eq-val/refl false).
+
+{B1 : exp} {E1 : eval B1 true} {E2 : eval B1 false}
+{Q : eq-val true false} {Q' : eq-val false true}
+eval-uniq (neg B1) false true (eval/neg-t B1 E1) (eval/neg-f B1 E2) Q'
+  <- eval-uniq B1 true false E1 E2 Q.
+
+{B1 : exp} {E1 : eval B1 false} {E2 : eval B1 false}
+eval-uniq (neg B1) true true (eval/neg-f B1 E1) (eval/neg-f B1 E2) (eq-val/refl true).
+
+{B1 : exp} {E1 : eval B1 false} {E2 : eval B1 true}
+{Q : eq-val false true} {Q' : eq-val true false}
+eval-uniq (neg B1) true false (eval/neg-f B1 E1) (eval/neg-t B1 E2) Q'
+  <- eval-uniq B1 false true E1 E2 Q.

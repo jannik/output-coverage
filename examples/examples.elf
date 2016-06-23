@@ -153,3 +153,22 @@ soundness-eval'/neg-f : soundness-eval' (eval'/neg negate/false E') (eval/neg-f 
 
 %worlds () (soundness-eval' _ _).
 %total E' (soundness-eval' E' _).
+
+
+
+% temp
+
+nat : type.
+z : nat.
+s : nat -> nat.
+
+add : nat -> nat -> nat -> type.
+add/z : {B : nat} add z B B.
+add/s : {A : nat} {B : nat} {C : nat} add A B C -> add (s A) B (s C).
+
+1plus1is1 : add (s z) (s z) (s z) -> type.
+%mode 1plus1is1 +A.
+% no cases
+%worlds () (1plus1is1 _).
+% total {} (1plus1is1 _).
+

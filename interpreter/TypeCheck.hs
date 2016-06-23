@@ -37,8 +37,13 @@ buildPredicate cls (pnam, deps, mo) = Pred pnam deps mo [cl | cl@(Clause _ (Stru
 
 typeCheck :: [TypeFam'] -> Program' -> Either TypingError ()
 typeCheck fams preds = runExcept $
-  checkFamilies [] fams >>
-  checkPredicates fams [] preds
+  checkFamilies [] fams >> -- heads
+  checkFamilies2 fams fams >> -- constructors
+  -- note: this way allows too much. the type of a constructor can reference constructors defined later, unlike in twelf..
+  -- eventually, make it like twelf where nothing is 'gathered together' in advance and everthing is type checked in order!
+  -- it will be easier once i remove the distinction between type families and predicates..
+  checkPredicates fams [] preds >> -- heads
+  checkPredicates2 fams preds preds -- cases
 
 checkFamilies :: [TypeFam'] -> [TypeFam'] -> Except TypingError ()
 checkFamilies sig [] = return ()
@@ -46,10 +51,16 @@ checkFamilies sig (fam : fams) =
   checkFamily sig fam >>
   checkFamilies (sig ++ [fam]) fams
 
+checkFamilies2 :: [TypeFam'] -> [TypeFam'] -> Except TypingError ()
+checkFamilies2 sig fams = mapM_ (checkFamily2 sig) fams
+
 checkFamily :: [TypeFam'] -> TypeFam' -> Except TypingError ()
 checkFamily sig (TypeFam tnam deps cns) =
-  checkDependencies [] sig deps >>
-  mapM_ (checkConstructor [] (sig ++ [TypeFam tnam deps []]) tnam) cns
+  checkDependencies [] sig deps >> return ()
+
+checkFamily2 :: [TypeFam'] -> TypeFam' -> Except TypingError ()
+checkFamily2 sig (TypeFam tnam deps cns) =
+  mapM_ (checkConstructor [] sig tnam) cns
 
 checkDependencies :: [Dependency'] -> [TypeFam'] -> [Dependency'] -> Except TypingError [Dependency']
 checkDependencies env sig [] = return env
@@ -123,7 +134,7 @@ checkTerm env sig (Comp cnam tms) = do
   (deps, tp) <- checkTerms env sig cnam $ reverse tms
   if null deps
     then return tp
-    else throwError $ "not sure, probably type error" ++ show deps
+    else throwError $ "not sure, probably type error" ++ show cnam
 
 checkTerms :: [Dependency'] -> [TypeFam'] -> ConName -> [Term'] -> Except TypingError ([Dependency'], Type')
 checkTerms env sig cnam [] =
@@ -147,10 +158,16 @@ checkPredicates sig sig' (pred : preds) =
   checkPredicate sig sig' pred >>
   checkPredicates sig (sig' ++ [pred]) preds
 
+checkPredicates2 :: [TypeFam'] -> [Predicate'] -> [Predicate'] -> Except TypingError ()
+checkPredicates2 sig sig' preds = mapM_ (checkPredicate2 sig sig') preds
+
 checkPredicate :: [TypeFam'] -> [Predicate'] -> Predicate' -> Except TypingError ()
 checkPredicate sig sig' (Pred pnam deps mo cls) =
-  checkDependencies [] sig deps >>
-  mapM_ (checkClause sig (sig' ++ [Pred pnam deps mo []]) pnam) cls
+  checkDependencies [] sig deps >> return ()
+
+checkPredicate2 :: [TypeFam'] -> [Predicate'] -> Predicate' -> Except TypingError ()
+checkPredicate2 sig sig' (Pred pnam deps mo cls) =  
+  mapM_ (checkClause sig sig' pnam) cls
 
 checkClause :: [TypeFam'] -> [Predicate'] -> PredName -> Clause' -> Except TypingError ()
 checkClause sig sig' pnam (Clause deps str@(Struct pnam' _) strs)

@@ -8,11 +8,11 @@ type Program a = [Predicate a]
 data Predicate a = Pred PredName [Dependency a] Mode [Clause a] deriving (Eq, Show)
 type PredName = String
 type Dependency a = (a, Type a)
-data Type a = Typ TypeName [Term a] deriving (Eq, Show)
+data Type a = Typ TypeName [Term a] deriving (Eq, Ord, Show) -- Ord is hopefully temporary
 type TypeName = String
-data Clause a = Clause [Dependency a] (Structure a) [Structure a] deriving (Eq, Show)
-data Structure a = Struct PredName [Term a] deriving (Eq, Show)
-data Term a = Var a | Comp ConName [Term a] deriving (Eq, Show)
+data Clause a = Clause [Dependency a] (Structure a) [Structure a] deriving (Eq, Ord, Show) -- Ord is hopefully temporary
+data Structure a = Struct PredName [Term a] deriving (Eq, Ord, Show) -- Ord is hopefully temporary
+data Term a = Var a | Comp ConName [Term a] deriving (Eq, Ord, Show) -- Ord is hopefully temporary
 type VarName = String
 type ConName = String
 
