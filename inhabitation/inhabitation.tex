@@ -1,0 +1,198 @@
+\documentclass[12pt]{article}
+
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage[pdftex]{graphicx}
+
+\usepackage{amsmath, amssymb}
+\usepackage{mathtools} % for Coloneqq
+
+\usepackage{bussproofs}
+
+\newcommand{\ensurecommand}[1]{\providecommand{#1}{}\renewcommand{#1}}
+
+\ensurecommand{\defi}{\Coloneqq}
+\ensurecommand{\alt}{\;\; | \;\;}
+
+\ensurecommand{\type}{\mathtt{type}}
+\ensurecommand{\pi}[3]{\Pi \; \typing{#1}{#2} \, . \; #3}
+\ensurecommand{\app}[2]{#1 \; #2}
+
+\ensurecommand{\yes}{\mathtt{yes}}
+\ensurecommand{\no}{\mathtt{no}}
+\ensurecommand{\a}{\alpha}
+\ensurecommand{\sig}{\Sigma}
+\ensurecommand{\ctx}{\Gamma}
+\ensurecommand{\nil}{\cdot}
+\ensurecommand{\cons}[2]{#1 , \, #2}
+\ensurecommand{\typing}[2]{#1 : #2}
+\ensurecommand{\ctxsep}{\; | \;}
+\ensurecommand{\tup}[1]{\langle #1 \rangle}
+\ensurecommand{\tupsep}{\; ; \;}
+
+\ensurecommand{\upd}[3]{#1[#2 \mapsto #3]}
+\ensurecommand{\sub}[3]{#1[#2 / #3]}
+
+\ensurecommand{\hasType}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\hasKind}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\isType}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{type}}}
+\ensurecommand{\isKind}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{kind}}}
+\ensurecommand{\isSig}[1]{\ensuremath{#1 \; \mathbf{sig}}}
+
+\ensurecommand{\unifiable}[3]{\ensuremath{\vdash \mathbf{unifiable} \; #1 \; #2 \; \Rightarrow #3}}
+\ensurecommand{\isSim}[6]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \sim #4 : \tup{#5 \tupsep #6}}}
+\ensurecommand{\coops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
+\ensurecommand{\anyEmpty}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{empty}}}
+\ensurecommand{\allCoops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
+\ensurecommand{\isEmpty}[3]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{empty}}}
+
+
+\ensurecommand{\ninf}[1]{\AxiomC{#1}}
+\ensurecommand{\uinf}[1]{\UnaryInfC{#1}}
+\ensurecommand{\binf}[1]{\BinaryInfC{#1}}
+\ensurecommand{\ax}[1]{\ninf{} \uinf{#1}}
+\ensurecommand{\leftl}[1]{\LeftLabel{#1 \;}}
+\ensurecommand{\rightl}[1]{\RightLabel{(#1)}}
+\ensurecommand{\rulename}{\textsc}
+
+\begin{document}
+
+\section*{Inhabitation Problem}
+
+While the inhabitation problem is in general undecidable for a system with dependent types, it is possible to determine whether a type is \textit{simply empty}.
+The following judgements aim to characterise this notion --- a valid primitive type $P$, i.e. where $\isType{\ctx}{P}$ is derivable, is simply empty if $\isEmpty{\nil}{\ctx}{P}$ is derivable.
+
+We recall the language and type system (omitted here):
+\begin{align*}
+  K &\defi \type \alt \pi{x}{P}{K} \\
+  P &\defi a \alt \app{P}{M} \\
+  A &\defi P \alt \pi{x}{P}{A} \\
+  M, N &\defi c \alt x \alt \app{M}{N} \\
+  \\
+  \sig &\defi \nil \alt \cons{\sig}{\typing{a}{K}} \alt \cons{\sig}{\typing{c}{A}} \\
+  \ctx &\defi \nil \alt \cons{\ctx}{\typing{x}{P}}
+\end{align*}
+
+We will further need the following:
+\begin{align*}
+  R &\defi \yes \alt \no \\
+  \a &\defi \nil \alt \cons{\a}{a}
+\end{align*}
+
+The first judgement determines whether or not two primitive types are unifiable (discarding a potential unifying substitution).
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\unifiable{P}{P'}{R}}
+
+\vspace{0.5cm} [Undefined for now, but we require $FV(P) \cap FV(P') = \emptyset$, which can be achieved by renaming before attempting unification.]
+
+\vspace{0.5cm}
+}
+
+\newpage % temp
+
+The next judgement determines whether a constructor (with type $A$) can be used to construct an object of type $P$.
+If so, it records the dependencies required.
+It is expected that both $\isType{\ctx}{P}$ and $\isType{\ctx'}{A}$ are derivable!
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\isSim{\ctx}{\ctx'}{P}{A}{\ctx''}{R}}
+
+\begin{prooftree}
+  \ninf{\unifiable{P}{P'}{R}}
+  \uinf{\isSim{\ctx}{\ctx'}{P}{P'}{\ctx'}{R}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isSim{\ctx}{\cons{\ctx'}{\typing{x}{P'}}}{P}{A}{\ctx''}{R}}
+  \uinf{\isSim{\ctx}{\ctx'}{P}{(\pi{x}{P'}{A})}{\ctx''}{R}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+The following judgement expresses that a closed type $A$, i.e. where $\isType{\nil}{A}$ is derivable, cooperates that $P$ is empty.
+That is, $A$ cannot help to produce inhabitants of $P$.
+(It is again expected that $\isType{\ctx}{P}$ is derivable.)
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\coops{\a}{\ctx}{A}{P}}
+
+\begin{prooftree}
+  \ninf{\isSim{\ctx}{\nil}{P}{A}{\ctx''}{\no}}
+  \uinf{\coops{\a}{\ctx}{A}{P}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isSim{\ctx}{\nil}{P}{A}{\ctx''}{\yes}}
+  \ninf{\anyEmpty{\cons{\a}{a}}{\ctx''}}
+  \rightl{$P = a \; M_1 \; \ldots \; M_n$}
+  \binf{\coops{\a}{\ctx}{A}{P}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+$\anyEmpty{\a}{\ctx}$ expresses that at least one type in $\ctx$ is simply empty:
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\anyEmpty{\a}{\ctx}}
+
+\begin{prooftree}
+  \ninf{\anyEmpty{\a}{\ctx}}
+  \uinf{\anyEmpty{\a}{\cons{\ctx}{\typing{x}{P}}}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isEmpty{\a}{\ctx}{P}}
+  \rightl{$P = a \; M_1 \; \ldots \; M_n$ and $a \notin \a$}
+  \uinf{\anyEmpty{\a}{\cons{\ctx}{\typing{x}{P}}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+The following judgement expresses that all bindings in a signature cooperate that $P$ is empty.
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\allCoops{\a}{\ctx}{\sig'}{P}}
+
+\begin{prooftree}
+  \ax{\allCoops{\a}{\ctx}{\nil}{P}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\allCoops{\a}{\ctx}{\sig'}{P}}
+  \uinf{\allCoops{\a}{\ctx}{\cons{\sig'}{\typing{a}{K}}}{P}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\allCoops{\a}{\ctx}{\sig'}{P}}
+  \ninf{\coops{\a}{\ctx}{A}{P}}
+  \binf{\allCoops{\a}{\ctx}{\cons{\sig'}{\typing{c}{A}}}{P}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+And finally the main judgement expressing that $P$ is simply empty:
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\isEmpty{\a}{\ctx}{P}}
+
+\begin{prooftree}
+  \ninf{\allCoops{\a}{\ctx}{\sig}{P}}
+  \uinf{\isEmpty{\a}{\ctx}{P}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+\end{document}
