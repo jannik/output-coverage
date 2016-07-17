@@ -1,144 +1,35 @@
-\documentclass[12pt]{article}
-
-\usepackage[english]{babel}
-\usepackage[T1]{fontenc}
-\usepackage[latin1]{inputenc}
-\usepackage[pdftex]{graphicx}
-
-\usepackage{amsmath, amssymb}
-\usepackage{mathtools} % for Coloneqq
-
-\usepackage{bussproofs}
-
-\newcommand{\ensurecommand}[1]{\providecommand{#1}{}\renewcommand{#1}}
-
-\ensurecommand{\defi}{\Coloneqq}
-\ensurecommand{\alt}{\;\; | \;\;}
-
-\ensurecommand{\type}{\mathtt{type}}
-\ensurecommand{\pi}[2]{\Pi \; #1 \, . \; #2}
-\ensurecommand{\app}[2]{#1 \; #2}
-
-\ensurecommand{\yes}{\mathtt{yes}}
-\ensurecommand{\no}{\mathtt{no}}
-\ensurecommand{\a}{\alpha}
-\ensurecommand{\sig}{\Sigma}
-\ensurecommand{\ctx}{\Gamma}
-\ensurecommand{\nil}{\cdot}
-\ensurecommand{\cons}[2]{#1 , \, #2}
-\ensurecommand{\typing}[2]{#1 : #2}
-\ensurecommand{\ctxsep}{\; | \;}
-\ensurecommand{\tup}[1]{\langle #1 \rangle}
-\ensurecommand{\tupsep}{\; ; \;}
-\ensurecommand{\set}[1]{\{ #1 \}}
-\ensurecommand{\s}{\sigma}
-
-\ensurecommand{\upd}[3]{#1[#2 \mapsto #3]}
-\ensurecommand{\sub}[3]{#1[#2 / #3]}
-
-\ensurecommand{\hasType}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
-\ensurecommand{\hasKind}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
-\ensurecommand{\isType}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{type}}}
-\ensurecommand{\isKind}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{kind}}}
-\ensurecommand{\isSig}[1]{\ensuremath{#1 \; \mathbf{sig}}}
-
-\ensurecommand{\substTyping}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
-
-\ensurecommand{\unifiable}[3]{\ensuremath{\vdash \mathbf{unifiable} \; #1 \; #2 \; \Rightarrow #3}}
-\ensurecommand{\isSim}[6]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \sim #4 : \tup{#5 \tupsep #6}}}
-\ensurecommand{\coops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
-\ensurecommand{\anyEmpty}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{empty}}}
-\ensurecommand{\allCoops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
-\ensurecommand{\isEmpty}[3]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{empty}}}
-
-\ensurecommand{\ninf}[1]{\AxiomC{#1}}
-\ensurecommand{\uinf}[1]{\UnaryInfC{#1}}
-\ensurecommand{\binf}[1]{\BinaryInfC{#1}}
-\ensurecommand{\ax}[1]{\ninf{} \uinf{#1}}
-\ensurecommand{\leftl}[1]{\LeftLabel{#1 \;}}
-\ensurecommand{\rightl}[1]{\RightLabel{(#1)}}
-\ensurecommand{\rulename}{\textsc}
-
-\ensurecommand{\comment}[1]{}
-
-\begin{document}
-
-\section*{Preliminaries}
-
-We recall
-\begin{align*}
-  K &\defi \type \alt \pi{\typing{x}{P}}{K} \\
-  P &\defi a \alt \app{P}{M} \\
-  A &\defi P \alt \pi{\typing{x}{P}}{A} \\
-  M, N &\defi c \alt x \alt \app{M}{N} \\
-  \\
-  \sig &\defi \nil \alt \cons{\sig}{\typing{a}{K}} \alt \cons{\sig}{\typing{c}{A}} \\
-  \ctx &\defi \nil \alt \cons{\ctx}{\typing{x}{P}} \\
-  \s &\defi \nil \alt \cons{\s}{M/x}
-\end{align*}
-
-We will use $U$ to stand for either an object or a type, and $V$ to stand for either a type or a kind.
-Letting $\ctx = \nil, \typing{x_1}{P_1}, ..., \typing{x_n}{P_n}$, we will write $\pi{\ctx}{P}$ as a shorthand for $\Pi \; \typing{x_1}{P_1} \; ... \; \Pi \; \typing{x_n}{P_n} \, . \; P$. 
-
-To ensure that substitutions transform terms well-typed in one context into terms well-typed in another, we define a typing judgement for substitutions:
-
-{ % judgement
-\vspace{0.5cm}
-\noindent \framebox{\substTyping{\ctx'}{\s}{\ctx}}
-
-\begin{prooftree}
-  \ax{\substTyping{\ctx'}{\nil}{\nil}}
-\end{prooftree}
-
-\begin{prooftree}
-  \ninf{\substTyping{\ctx'}{\s}{\ctx}}
-  \ninf{\hasType{\ctx'}{M}{P[\s]}}
-  \leftl{\rulename{M-App} :}
-  \binf{\substTyping{\ctx'}{(\s, M/x)}{(\ctx, \typing{x}{P})}}
-\end{prooftree}
-
-\vspace{0.5cm}
-}
-
-Applying a substitution $\substTyping{\ctx'}{\s}{\ctx}$ to a term $\hasKind{\ctx}{U}{V}$ then yields $\hasKind{\ctx'}{U[\s]}{V[\s]}$.
-
-A unification problem $E$ is taken to be a set of equalities between either primitive types or objects.
-Since we are only dealing with first-order unification, it is decidable whether $E$ results in failure or a most general unifier (mgu) $\s$.
+% \clearpage
 
 \section*{Inhabitation Problem}
 
-A closed, primitive type $\hasKind{\nil}{P}{\type}$ is \textit{inhabited} if there exists an object $M$ such that $\hasType{\nil}{M}{P}$.
-We would like to define a notion of type emptiness that is sound, i.e. it must be possible to show that $P$ cannot be both empty and inhabited.
+A type $\hasKind{\ctx}{A}{\type}$ is \textit{(strongly) inhabited} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there exists an object $M$ such that $\hasType{\nil}{M}{\subst{A}{\sub}}$.
+It is \textit{weakly inhabited} or \textit{inhabitable} if there exist both a substitution $\subHasCtx{\nil}{\sub}{\ctx}$ and an object $M$ such that $\hasType{\nil}{M}{\subst{A}{\sub}}$.
+Note that the two definitions coincide when the context $\ctx$ is empty and $A$ is a closed type; the empty substitution $\emptysub$ satisfies $\subHasCtx{\nil}{\emptysub}{\nil}$ and $\subst{A}{\emptysub} = A$, so both definitions require the existence of a closed object $M$ for which $\hasType{\nil}{M}{A}$.
+(However, strong inhabitation does not always imply weak inhabitation.)
 
-A first idea is to ``imitate input coverage'' and define emptiness in terms of a notion of immediate emptiness.
-We can say a type $\hasKind{\nil}{P}{\type}$ is \textit{immediately empty} if there does not exist a typing $\typing{c}{\pi{\ctx_c}{P_c}} \in \sig$ and substitution $\substTyping{\nil}{\s}{\ctx_c}$ such that $P = P_c[\s]$.
-[I think I can show that a type cannot be both immediately empty and inhabited.]
-However, it is unclear how to then define emptiness elegantly in terms of immediate emptiness.
+As a converse notion, we say a type $\hasKind{\ctx}{A}{\type}$ is \textit{empty} or \textit{uninhabitable} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there does not exist an object $M$ such that $\hasType{\nil}{M}{\subst{A}{\sub}}$.
+Or equivalently, a type $\hasKind{\ctx}{A}{\type}$ is empty if there exists no substitution $\subHasCtx{\nil}{\sub}{(\ctx, \typing{x}{A})}$.
+Or equivalently again, $\hasKind{\ctx}{A}{\type}$ is empty if the coverage goal $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ is covered by the empty set of patterns, i.e. it has no ground instances.
 
-Another approach is to essentially phrase emptiness as an input coverage problem --- and use splitting.
+Since emptiness is exactly the converse of inhabitability, the notion is sound in the following sense:
+A type cannot be both empty and inhabitable.
+And, in particular, a closed type $\hasKind{\nil}{A}{\type}$ cannot be both empty and inhabited.
 
-A (coverage) \textit{goal} or \textit{pattern} is a term (object or type) $U$ containing free variables such that $\hasKind{\ctx}{U}{V}$.
-It represents the collection of closed terms given by instantiating the variables in $\ctx$.
+\begin{theorem}[Conservativity of emptiness]
+Let $\hasKind{\ctx}{A}{\type}$ be a type and $\S = \set{\subHasCtx{\ctx_i}{\sub_i}{(\ctx, \typing{x}{A})} \;\;|\;\; i = 1, ..., n}$ a non-redundant, complete set of substitutions.
+Then $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ has no ground instances if and only if all members of $\set{\hasKind{\ctx_i}{\subst{x}{\sub_i}}{\subst{A}{\sub_i}} \;\;|\;\; i = 1, ..., n}$ have no ground instances.
+\end{theorem}
 
-Given a pattern $\hasKind{\ctx_1, \typing{x}{P_x}, \ctx_2}{U}{V}$, we can \textit{split} it on the variable $x$ to yield the following set of patterns:
-\begin{align*}
-\set{
-  \hasKind{\ctx', \ctx_2[\s]}{U[\s]}{V[\s]} \;\;|\;\; & \typing{c}{\pi{\ctx_c}{P_c}} \in \sig, \\
-  & \s \; \text{is the mgu of} \; \set{P_x = P_c, x = \app{c}{\ctx_c}}, \\
-  & \substTyping{\ctx'}{\s}{(\ctx_1, \typing{x}{P_x}, \ctx_c)}
-}
-\end{align*}
+\begin{proof}
+Since $\S$ is complete, the sets of ground instances are exactly the same.
+\end{proof}
 
-Crucially, a pattern $\hasKind{\ctx}{U}{V}$ and the result of a split $\set{\hasKind{\ctx_i}{U_i}{V_i} \;\;|\;\; i = 1, ..., n}$ represent the same collection of closed terms.
-Hence it can be shown that a coverage goal is covered by a set of patterns if and only if the goals resulting from splitting the goal (on any variable) are all covered.
+By Theorem~\ref{thm:splitting-props}, then, applying the splitting operation preserves the question of emptiness.
+That is, in trying to decide whether a type $\hasKind{\ctx}{A}{\type}$ is empty it is safe to instead consider the result of splitting the goal $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ any number of times.
+Of course, an algorithm (necessarily incomplete) that attempts to decide emptiness by repeated splitting must have a termination criterion.
 
-Any worthwhile definition of type emptiness will similarly be ``closed under splitting'', and in fact it might be reasonable to define emptiness in terms of splitting.
-Given a closed, primitive type $\hasKind{\nil}{P}{\type}$, let $\mathcal{P}$ be the set resulting from splitting the pattern $\hasKind{\typing{x}{P}}{x}{P}$ on $x$.
-We can recursively define $P$ to be \textit{empty} if all patterns in $\mathcal{P}$ are empty (which, as a base case, is vacuously the case for $\mathcal{P} = \emptyset$).
-
-Of course, an algorithm (necessarily incomplete) that attempts to decide emptiness based on this definition must have a termination criterion.
-[I have some thoughts on this; the best idea seems to be to use a \textit{subordination} relation.]
-%
-[I have not managed to show soundness yet. Does it seem viable to you?]
-
-\end{document}
+[
+Introduce the subordination relation, and propose an algorithm that stops splitting when the type of a new variable is not strictly subordinate (to the type of the splitting variable).
+Argue that the algorithm terminates.
+And argue that, although necessarily incomplete, it is still 'useful'.
+]

@@ -6,6 +6,11 @@
 *.bbl
 *.blg
 
+*.thm
+
+*.tcp
+*.tps
+
 *.synctex
 
 *.pdf

@@ -1,0 +1,97 @@
+\clearpage
+
+\section*{Preliminaries}
+
+We recall
+\begin{align*}
+  K &\defi \type \alt \pi{\typing{x}{P}}{K} \\
+  P &\defi a \alt \app{P}{M} \\
+  A &\defi P \alt \pi{\typing{x}{P}}{A} \\
+  M, N &\defi c \alt x \alt \app{M}{N} \\
+  \\
+  \sig &\defi \nil \alt \cons{\sig}{\typing{a}{K}} \alt \cons{\sig}{\typing{c}{A}} \\
+  \ctx &\defi \nil \alt \cons{\ctx}{\typing{x}{P}} \\
+  \sub &\defi \emptysub \alt \cons{\sub}{\for{M}{x}}
+\end{align*}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\hasType{\ctx}{M}{A}}
+
+\begin{prooftree}
+  \ninf{$(\typing{c}{A}) \in \sig$}
+  \leftl{\rulename{M-Const} :}
+  \uinf{\hasType{\ctx}{c}{A}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{$(\typing{x}{P}) \in \ctx$}
+  \leftl{\rulename{M-Var} :}
+  \uinf{\hasType{\ctx}{x}{P}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\hasType{\ctx}{M}{(\pi{\typing{x}{P}}{A}})}
+  \ninf{\hasType{\ctx}{N}{P}}
+  \leftl{\rulename{M-App} :}
+  \binf{\hasType{\ctx}{\app{M}{N}}{\subst{A}{\for{N}{x}}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\hasKind{\ctx}{P}{K}}
+
+\begin{prooftree}
+  \ninf{$(\typing{a}{K}) \in \sig$}
+  \leftl{\rulename{P-Atom} :}
+  \uinf{\hasKind{\ctx}{a}{K}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\hasKind{\ctx}{P}{(\pi{\typing{x}{P'}}{K}})}
+  \ninf{\hasType{\ctx}{M}{P'}}
+  \leftl{\rulename{P-App} :}
+  \binf{\hasKind{\ctx}{\app{P}{M}}{\subst{K}{\for{M}{x}}}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+We will use $U$ to stand for either an object or a type, and $V$ to stand for either a type or a kind.
+Letting $\ctx = \nil, \typing{x_1}{P_1}, ..., \typing{x_n}{P_n}$, we will write $\pi{\ctx}{P}$ as a shorthand for $\Pi \; \typing{x_1}{P_1} \; ... \; \Pi \; \typing{x_n}{P_n} \, . \; P$. 
+And for a constant $c$, $\app{c}{\ctx}$ is shorthand for $c \; x_1 \; ... \; x_n$.
+
+To ensure that substitutions transform terms well-typed in one context into terms well-typed in another, we define a typing judgement for substitutions:
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\subHasCtx{\ctx'}{\sub}{\ctx}}
+
+\begin{prooftree}
+  \leftl{\rulename{S-Nil} :}
+  \ax{\subHasCtx{\ctx'}{\emptysub}{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\subHasCtx{\ctx'}{\sub}{\ctx}}
+  \ninf{\hasType{\ctx'}{M}{\subst{P}{\sub}}}
+  \leftl{\rulename{S-Cons} :}
+  \binf{\subHasCtx{\ctx'}{(\sub, M/x)}{(\ctx, \typing{x}{P})}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+Applying a substitution $\subHasCtx{\ctx'}{\sub}{\ctx}$ to a term $\hasKind{\ctx}{U}{V}$ then yields $\hasKind{\ctx'}{U[\sub]}{V[\sub]}$.
+Composition of substitutions is given by $\comp{\emptysub}{\sub} = \emptysub$ and $\comp{(\sub', \for{M}{x})}{\sub} = (\comp{\sub'}{\sub}, \for{\subst{M}{\sub}}{x})$.
+
+Let $\S = \set{\subHasCtx{\ctx_i}{\sub_i}{\ctx} \;\;|\;\; i = 1, ..., n}$ be a set of substitutions, for some context $\ctx$.
+$\S$ is \textit{non-redundant} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there is at most one $(\subHasCtx{\ctx_i}{\sub_i}{\ctx}) \in \S$ for which there exists $\subHasCtx{\nil}{\sub_i'}{\ctx_i}$ such that $\sub = \comp{\sub_i}{\sub_i'}$.
+$\S$ is \textit{complete} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there is at least one such $(\subHasCtx{\ctx_i}{\sub_i}{\ctx}) \in \S$.
+Hence $\S$ is both non-redundant and complete if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there is a unique $(\subHasCtx{\ctx_i}{\sub_i}{\ctx}) \in \S$ for which there exists $\subHasCtx{\nil}{\sub_i'}{\ctx_i}$ such that $\sub = \comp{\sub_i}{\sub_i'}$.
+
+A unification problem $E$ is taken to be a set of equalities $U \approx U'$ between either primitive types or objects (containing free variables on both sides).
+Since we are only dealing with first-order unification, it is decidable whether $E$ results in failure or a most general unifier (mgu) $\sub$.

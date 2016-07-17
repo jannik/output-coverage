@@ -1,0 +1,78 @@
+\newcounter{statementcounter}
+\newtheorem{lemma}[statementcounter]{Lemma}
+\newtheorem{theorem}[statementcounter]{Theorem}
+
+%\newenvironment{judgement}[2]{
+%\vspace{0.5cm}
+%\noindent \framebox{#1} (#2)
+%\vspace{0.5cm}
+%}{
+%\vspace{0.5cm}
+%}
+
+\newenvironment{proof}[1][Proof]{
+\paragraph{#1}
+}{
+\begin{flushright}
+$\blacksquare$
+\end{flushright}
+}
+
+% meta
+\newcommand{\ensurecommand}[1]{\providecommand{#1}{}\renewcommand{#1}}
+\ensurecommand{\comment}[1]{}
+
+% judgements/rules
+\ensurecommand{\ninf}[1]{\AxiomC{#1}}
+\ensurecommand{\uinf}[1]{\UnaryInfC{#1}}
+\ensurecommand{\binf}[1]{\BinaryInfC{#1}}
+\ensurecommand{\tinf}[1]{\TrinaryInfC{#1}}
+\ensurecommand{\qinf}[1]{\QuaternaryInfC{#1}}
+\ensurecommand{\ax}[1]{\ninf{} \uinf{#1}}
+\ensurecommand{\prem}[2]{\noLine \ninf{$#1$} \uinf{#2}}
+\ensurecommand{\leftl}[1]{\LeftLabel{#1 \;}}
+\ensurecommand{\rightl}[1]{\RightLabel{#1}}
+\ensurecommand{\rulename}{\textsc}
+
+% symbols
+\ensurecommand{\sig}{\Sigma}
+\ensurecommand{\ctx}{\Gamma}
+\ensurecommand{\sub}{\sigma}
+\ensurecommand{\emptysub}{\varepsilon}
+\ensurecommand{\T}{\mathcal{T}}
+\ensurecommand{\P}{\mathcal{P}}
+\ensurecommand{\S}{\mathcal{S}}
+
+% misc/general
+\ensurecommand{\defi}{\Coloneqq}
+\ensurecommand{\alt}{\;\; | \;\;}
+\ensurecommand{\set}[1]{\{ #1 \}}
+\ensurecommand{\tup}[1]{\langle #1 \rangle}
+\ensurecommand{\nil}{\cdot}
+\ensurecommand{\cons}[2]{#1 , \, #2}
+
+% lf syntax
+\ensurecommand{\type}{\mathtt{type}}
+\ensurecommand{\pi}[2]{\Pi \; #1 \, . \; #2}
+\ensurecommand{\app}[2]{#1 \; #2}
+\ensurecommand{\typing}[2]{#1 : #2}
+\ensurecommand{\for}[2]{#1 / #2}
+\ensurecommand{\subst}[2]{#1[#2]}
+\ensurecommand{\defeq}[2]{#1 \equiv #2}
+\ensurecommand{\comp}[2]{#1 \circ #2}
+
+% lf judgements
+\ensurecommand{\hasType}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\hasKind}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\isType}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{type}}}
+\ensurecommand{\isKind}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{kind}}}
+\ensurecommand{\isSig}[1]{\ensuremath{#1 \; \mathbf{sig}}}
+\ensurecommand{\subHasCtx}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+
+% inhabitation judgements
+\ensurecommand{\unifiable}[3]{\ensuremath{\vdash \mathbf{unifiable} \; #1 \; #2 \; \Rightarrow #3}}
+\ensurecommand{\isSim}[6]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \sim #4 : \tup{#5 \tupsep #6}}}
+\ensurecommand{\coops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
+\ensurecommand{\anyEmpty}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{empty}}}
+\ensurecommand{\allCoops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
+\ensurecommand{\isEmpty}[3]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{empty}}}
