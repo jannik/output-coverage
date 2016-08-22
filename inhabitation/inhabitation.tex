@@ -1,35 +1,52 @@
-% \clearpage
+\clearpage
 
-\section*{Inhabitation Problem}
+\section*{Inhabitation}
 
-A type $\hasKind{\ctx}{A}{\type}$ is \textit{(strongly) inhabited} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there exists an object $M$ such that $\hasType{\nil}{M}{\subst{A}{\sub}}$.
-It is \textit{weakly inhabited} or \textit{inhabitable} if there exist both a substitution $\subHasCtx{\nil}{\sub}{\ctx}$ and an object $M$ such that $\hasType{\nil}{M}{\subst{A}{\sub}}$.
-Note that the two definitions coincide when the context $\ctx$ is empty and $A$ is a closed type; the empty substitution $\emptysub$ satisfies $\subHasCtx{\nil}{\emptysub}{\nil}$ and $\subst{A}{\emptysub} = A$, so both definitions require the existence of a closed object $M$ for which $\hasType{\nil}{M}{A}$.
+\begin{definition}[Inhabitation]
+\label{def:inhabitation}
+Let $\ctx$ be a valid context, $P$ a primitive type such that $\hasKind{\ctx}{P}{\type}$.
+$P$ is \emph{(strongly) inhabited} relative to $\ctx$ if, for all substitutions $\sub$ with $\subHasCtx{\nil}{\sub}{\ctx}$, there exists an object $M$ such that $\hasType{\nil}{M}{P[\sub]}$.
+It is \emph{weakly inhabited} or \emph{inhabitable} if there exist both a substitution $\sub$ with $\subHasCtx{\nil}{\sub}{\ctx}$ and an object $M$ such that $\hasType{\nil}{M}{P[\sub]}$.
+\end{definition}
+
+Note that the two definitions coincide when the context $\ctx$ is empty and $P$ is ground; the empty substitution $\emptysub$ satisfies $\subHasCtx{\nil}{\emptysub}{\nil}$ and $P[\emptysub] = P$, so both definitions require the existence of a ground object $M$ for which $\hasType{\nil}{M}{P}$.
 (However, strong inhabitation does not always imply weak inhabitation.)
+% illustrate this note with an example
 
-As a converse notion, we say a type $\hasKind{\ctx}{A}{\type}$ is \textit{empty} or \textit{uninhabitable} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there does not exist an object $M$ such that $\hasType{\nil}{M}{\subst{A}{\sub}}$.
-Or equivalently, a type $\hasKind{\ctx}{A}{\type}$ is empty if there exists no substitution $\subHasCtx{\nil}{\sub}{(\ctx, \typing{x}{A})}$.
-Or equivalently again, $\hasKind{\ctx}{A}{\type}$ is empty if the coverage goal $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ is covered by the empty set of patterns, i.e. it has no ground instances.
+We now define a converse notion to inhabitability.
+
+\begin{definition}[Emptiness]
+\label{def:emptiness}
+Let $\ctx$ be a valid context, $P$ a primitive type such that $\hasKind{\ctx}{P}{\type}$.
+$P$ is \emph{empty} or \emph{uninhabitable} if, for all substitutions $\sub$ with $\subHasCtx{\nil}{\sub}{\ctx}$, there does not exist an object $M$ such that $\hasType{\nil}{M}{P[\sub]}$.
+Or equivalently, $P$ is empty if there exists no substitution $\sub$ with $\subHasCtx{\nil}{\sub}{(\ctx, \typing{x}{P})}$.
+Or equivalently again, $P$ is empty if the coverage goal $\goal{(\ctx, \typing{x}{P})}{x}{P}$ is covered by the empty set of patterns, i.e. it has no ground instances.
+\end{definition}
 
 Since emptiness is exactly the converse of inhabitability, the notion is sound in the following sense:
 A type cannot be both empty and inhabitable.
-And, in particular, a closed type $\hasKind{\nil}{A}{\type}$ cannot be both empty and inhabited.
+And, in particular, a ground type $P$ (with $\hasKind{\nil}{P}{\type}$) cannot be both empty and inhabited.
 
 \begin{theorem}[Conservativity of emptiness]
-Let $\hasKind{\ctx}{A}{\type}$ be a type and $\S = \set{\subHasCtx{\ctx_i}{\sub_i}{(\ctx, \typing{x}{A})} \;\;|\;\; i = 1, ..., n}$ a non-redundant, complete set of substitutions.
-Then $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ has no ground instances if and only if all members of $\set{\hasKind{\ctx_i}{\subst{x}{\sub_i}}{\subst{A}{\sub_i}} \;\;|\;\; i = 1, ..., n}$ have no ground instances.
+\label{thm:conservativity-emptiness}
+Let $\ctx$ be a valid context, $P$ a primitive type such that $\hasKind{\ctx}{P}{\type}$, $\S$ a complete set of substitutions for $(\ctx, \typing{x}{P})$.
+% assuming $x \notin \dom{\ctx}..
+Then the goal $\goal{(\ctx, \typing{x}{P})}{x}{P}$ has no ground instances if all members of $\set{\goal{\ctx''}{x[\sub]}{P[\sub]} \| \triple{\ctx''}{\sub}{\ctx'} \in \S}$ have no ground instances.
+% and only if
 \end{theorem}
 
 \begin{proof}
-Since $\S$ is complete, the sets of ground instances are exactly the same.
+Since $\S$ is complete for $(\ctx, \typing{x}{P})$, the set of ground instances of $\goal{(\ctx, \typing{x}{P})}{x}{P}$ is a subset of the union of the sets of ground instances of $\goal{\ctx''}{x[\sub]}{P[\sub]}$ for each $\triple{\ctx''}{\sub}{\ctx'} \in \S$.
 \end{proof}
 
-By Theorem~\ref{thm:splitting-props}, then, applying the splitting operation preserves the question of emptiness.
-That is, in trying to decide whether a type $\hasKind{\ctx}{A}{\type}$ is empty it is safe to instead consider the result of splitting the goal $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ any number of times.
-Of course, an algorithm (necessarily incomplete) that attempts to decide emptiness by repeated splitting must have a termination criterion.
+% By Theorem~\ref{thm:splitting-props}, then, applying the splitting operation preserves the question of emptiness.
+% That is, in trying to decide whether a type $\hasKind{\ctx}{A}{\type}$ is empty it is safe to instead consider the result of splitting the goal $\hasKind{(\ctx, \typing{x}{A})}{x}{A}$ any number of times.
+% Of course, an algorithm (necessarily incomplete) that attempts to decide emptiness by repeated splitting must have a termination criterion.
 
-[
-Introduce the subordination relation, and propose an algorithm that stops splitting when the type of a new variable is not strictly subordinate (to the type of the splitting variable).
-Argue that the algorithm terminates.
-And argue that, although necessarily incomplete, it is still 'useful'.
-]
+%[
+%Introduce the subordination relation, and propose an algorithm that stops splitting when the type of a new variable is not strictly subordinate (to the type of the splitting variable).
+%Argue that the algorithm terminates.
+%And argue that, although necessarily incomplete, it is still 'useful'.
+%]
+
+%%% end

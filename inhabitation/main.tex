@@ -1,8 +1,12 @@
 \documentclass[12pt]{article}
 
 \usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+%\usepackage{lmodern}
+%\usepackage{euler}
 \usepackage{amsmath, amssymb}
-\usepackage{mathtools} % for Coloneqq
+\usepackage{mathtools} % for Coloneqq and similar
 \usepackage{graphicx}
 \usepackage{bussproofs}
 \usepackage{ntheorem}
@@ -17,18 +21,20 @@
     %urlcolor=black
 %}
 
-%\usepackage[T1]{fontenc}
-%\usepackage[latin1]{inputenc}
-%\usepackage[pdftex]{graphicx}
-
 \input{macros.tex}
 
 \begin{document}
 
 \input{preliminaries.tex}
 
+\input{valid-substitutions.tex}
+
+\input{unification.tex}
+
 \input{coverage.tex}
 
 \input{inhabitation.tex}
 
 \end{document}
+
+%%% end

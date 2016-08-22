@@ -1,12 +1,26 @@
 \newcounter{statementcounter}
+\newtheorem{definition}[statementcounter]{Definition}
 \newtheorem{lemma}[statementcounter]{Lemma}
 \newtheorem{theorem}[statementcounter]{Theorem}
 
-%\newenvironment{judgement}[2]{
+\newenvironment{judgement}[2]{
+\vspace{0.5cm}
+\noindent \framebox{#1} (#2)
+\vspace{0.5cm}
+}{
+\vspace{0.5cm}
+}
+
+% previously just did:
+
+%{ % judgement
 %\vspace{0.5cm}
-%\noindent \framebox{#1} (#2)
-%\vspace{0.5cm}
-%}{
+%\noindent \framebox{thejudgement}
+%
+%\begin{prooftree}
+%  some rule
+%\end{prooftree}
+%
 %\vspace{0.5cm}
 %}
 
@@ -37,37 +51,70 @@ $\blacksquare$
 % symbols
 \ensurecommand{\sig}{\Sigma}
 \ensurecommand{\ctx}{\Gamma}
-\ensurecommand{\sub}{\sigma}
-\ensurecommand{\emptysub}{\varepsilon}
+\ensurecommand{\ctxvar}{\Delta}
+\ensurecommand{\ctxvarvar}{\Xi}
+\ensurecommand{\E}{\mathcal{E}}
 \ensurecommand{\T}{\mathcal{T}}
+\ensurecommand{\I}{\mathcal{I}}
+\ensurecommand{\K}{\mathcal{K}}
 \ensurecommand{\P}{\mathcal{P}}
 \ensurecommand{\S}{\mathcal{S}}
 
 % misc/general
+\ensurecommand{\ldots}{...}
 \ensurecommand{\defi}{\Coloneqq}
+\ensurecommand{\mdefi}{\coloneqq} % mathematical definition, as opposed to syntactical categories (\defi)
 \ensurecommand{\alt}{\;\; | \;\;}
+\ensurecommand{\|}{\; | \;}
 \ensurecommand{\set}[1]{\{ #1 \}}
 \ensurecommand{\tup}[1]{\langle #1 \rangle}
 \ensurecommand{\nil}{\cdot}
-\ensurecommand{\cons}[2]{#1 , \, #2}
+\ensurecommand{\FV}[1]{\mathsf{FV}(#1)}
+\ensurecommand{\vars}[1]{\mathsf{vars}(#1)}
+
+% abstract substitution
+\ensurecommand{\sub}{\sigma}
+\ensurecommand{\subvar}{\tau}
+\ensurecommand{\emptysub}{\varepsilon}
+\ensurecommand{\idsub}{\mathsf{id}}
+\ensurecommand{\abssub}{\theta}
+\ensurecommand{\abssubvar}{\vartheta}
+\ensurecommand{\U}{\mathcal{U}}
+\ensurecommand{\dom}[1]{\mathsf{dom}(#1)}
+\ensurecommand{\ran}[1]{\mathsf{ran}(#1)}
+\ensurecommand{\vran}[1]{\mathsf{vran}(#1)}
+\ensurecommand{\mgu}[1]{\mathsf{mgu}(#1)}
+\ensurecommand{\for}[2]{#1 / #2}
+\ensurecommand{\restr}[2]{#1|_{#2}}
+
+% concrete substitution
+\ensurecommand{\comp}[2]{#1 \circ #2}
+
+% unification
+\ensurecommand{\ueqn}[2]{#1 \mathrel{\dot{=}} #2}
+\ensurecommand{\ustate}{\Psi}
+\ensurecommand{\ustep}[2]{\ensuremath{#1 \Longrightarrow #2}}
+\ensurecommand{\usteps}[2]{\ensuremath{#1 \Longrightarrow^* #2}}
 
 % lf syntax
 \ensurecommand{\type}{\mathtt{type}}
-\ensurecommand{\pi}[2]{\Pi \; #1 \, . \; #2}
+\ensurecommand{\pi}[2]{\Pi \, #1 . \, #2} % previously {\Pi \; #1 \, . \; #2}
 \ensurecommand{\app}[2]{#1 \; #2}
-\ensurecommand{\typing}[2]{#1 : #2}
-\ensurecommand{\for}[2]{#1 / #2}
-\ensurecommand{\subst}[2]{#1[#2]}
-\ensurecommand{\defeq}[2]{#1 \equiv #2}
-\ensurecommand{\comp}[2]{#1 \circ #2}
+\ensurecommand{\typing}[2]{#1 {:} #2} % equivalently, \mathord{:}
 
 % lf judgements
-\ensurecommand{\hasType}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
-\ensurecommand{\hasKind}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\hasType}[3]{\ensuremath{#1 \vdash_{\sig} #2 : #3}}
+\ensurecommand{\hasKind}[3]{\ensuremath{#1 \vdash_{\sig} #2 : #3}}
 \ensurecommand{\isType}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{type}}}
 \ensurecommand{\isKind}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{kind}}}
-\ensurecommand{\isSig}[1]{\ensuremath{#1 \; \mathbf{sig}}}
-\ensurecommand{\subHasCtx}[3]{\ensuremath{#1 \vdash_{\sig} \typing{#2}{#3}}}
+\ensurecommand{\isSig}[1]{\ensuremath{\vdash #1 \; \mathbf{sig}}}
+\ensurecommand{\isCtx}[1]{\ensuremath{\vdash_{\sig} #1 \; \mathbf{ctx}}}
+\ensurecommand{\subHasCtx}[3]{\ensuremath{#1 \vdash_{\sig} #2 : #3}}
+% consider, using search-and-replace, to make all hasKind use hasType and isKind use isType
+
+% coverage
+\ensurecommand{\triple}[3]{\tup{#1, #2, #3}}
+\ensurecommand{\goal}[3]{\tup{#1, #2, #3}}
 
 % inhabitation judgements
 \ensurecommand{\unifiable}[3]{\ensuremath{\vdash \mathbf{unifiable} \; #1 \; #2 \; \Rightarrow #3}}
@@ -76,3 +123,5 @@ $\blacksquare$
 \ensurecommand{\anyEmpty}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{empty}}}
 \ensurecommand{\allCoops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
 \ensurecommand{\isEmpty}[3]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{empty}}}
+
+%%% end

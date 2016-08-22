@@ -1,0 +1,268 @@
+\clearpage
+
+\section*{Unification}
+
+In this section, we use the meta-variable $U$ to range over objects and primitive types (categories $M$ and $P$), $V$ for primitive types and the single primitive kind $\type$.
+We also let $f$ and $g$ both range over constant symbols (i.e. object constants $c$ and type constants $a$).
+
+\begin{definition}[Unification problem]
+\label{def:unification-problem}
+A \emph{unification problem} $\U$ is a finite multi-set of pairs of terms, limited to primitive types or objects.
+For the elements of a unification problem, called \emph{equations}, we use the notation $U \dot{=} U'$ instead of $\tup{U, U'}$.
+That is, $\U = \set{\ueqn{U_1}{U_1'}, \ldots, \ueqn{U_n}{U_n'}}$.
+\end{definition}
+
+% maybe save a proper definition for ordered unification problems, or remove the need for ordering altogether!
+
+We extend a few definitions to apply also to unification problems:
+\begin{align*}
+\FV{\U} &\mdefi \bigcup{\set{\FV{U} \cup \FV{U'} \| \ueqn{U}{U'} \in \U}} \\
+\U \abssub &\mdefi \set{\ueqn{U \abssub}{U' \abssub} \| \ueqn{U}{U'} \in \U}
+\end{align*}
+
+In the following, we will suppose that a unification problem always comes equipped with an ordering on the multi-set.
+This will be useful later, but the ordering has no effect on whether a problem has a solution -- as defined momentarily.
+Hence
+\[ \U \defi \cdot \alt \ueqn{U}{U'}, \U \]
+
+\begin{definition}[Unifier, mgu]
+\label{def:unifier-mgu}
+An abstract substitution $\abssub$ is a \emph{unifier} of (and is said to \emph{unify}) an equation $\ueqn{U}{U'}$ if we have $U \abssub = U' \abssub$.
+It is a \emph{most general unifier} (or \emph{mgu}) of the equation if, for every unifier $\abssubvar$ of the equation, there exists an abstract substitution $\abssub'$ such that $\abssub \abssub' = \abssubvar$.
+
+The definitions extend to sets of equation; $\abssub$ is a unifier of a set of equations if it unifies each equation in the set.
+For a unification problem $\U$, we say that $\abssub$ is a \emph{solution} of $\U$ if it unifies all $(\ueqn{U}{U'}) \in \U$.
+\end{definition}
+
+Given a unification problem $\U$, we let $\mgu{\U}$ denote the (potentially empty) set of most general unifiers $\abssub$ that are idempotent, i.e. $\abssub \abssub = \abssub$, and
+satisfy $\dom{\abssub} \cup \vran{\abssub} \subseteq \FV{\U}$. Note that idempotence implies $\dom{\abssub} \cap \vran{\abssub} = \emptyset$.
+% maybe subseteq should really be eq
+% mention something about the properties of the first-order case, e.g. all mgus are instances of each other, my defined mgu set is finite..
+
+% reference prop 4.10 in old unification article?
+% It is decidable whether a unification problem is unifiable, and indeed the common algorithms produce a mgu with the above properties (if the problem is unifiable).
+
+\subsubsection*{An Inference System for Unification}
+
+In order to reason about unification, we present a simple formalisation that captures the common algorithms and their properties.
+This is essentially equivalent to the common inference system (inconveniently named ``$\U$'') presented by e.g. Baader and Snyder [ref].
+The correctness proof below is adapted from their book.
+% ref: Baader, F., and W. Snyder, "Unification Theory," chapter eight of Handbook of Automated Deduction, Springer Verlag, Berlin (2001).
+
+A \emph{unification state} $\ustate$ is either $\bot$ (representing failure) or a pair consisting of an ordered unification problem and an abstract substitution:
+\[ \ustate \defi \bot \alt \tup{\U \| \abssub} \]
+We now define a transition relation $\Longrightarrow$ on unification states, which is naturally extended to a multi-step relation $\Longrightarrow^*$ (the reflexive-transitive closure).
+
+\begin{judgement}{\ustep{\ustate}{\ustate'}}
+{$\ustate$ steps to $\ustate'$} % improve
+%
+\begin{itemize}
+	\item[] \rulename{Triv}:
+    \ax{\ustep{\tup{\ueqn{U}{U}, \U \| \abssub}}{\tup{\U \| \abssub}}}
+    \DisplayProof
+  \item[] \rulename{Decomp}:
+    \ax{\ustep{\tup{\ueqn{f \; M_1 \; \ldots \; M_n}{f \; M_1' \; \ldots \; M_n'}, \U \| \abssub}}{\tup{\ueqn{M_1}{M_1'}, \ldots, \ueqn{M_n}{M_n'}, \U \| \abssub}}}
+    \DisplayProof
+  \item[] \rulename{Clash}:
+    \rightl{($f \neq g$ or $m \neq n$)}
+    \ax{\ustep{\tup{\ueqn{f \; M_1 \; \ldots \; M_m}{g \; M_1' \; \ldots \; M_n'}, \U \| \abssub}}{\bot}}
+    \DisplayProof
+  \item[] \rulename{Orient}:
+    \rightl{($M$ is not a variable)}
+    \ax{\ustep{\tup{\ueqn{M}{x}, \U \| \abssub}}{\tup{\ueqn{x}{M}, \U \| \abssub}}}
+    \DisplayProof
+  \item[] \rulename{Occurs}:
+    \rightl{($x \in \FV{M}$ but $x \neq M$)}
+    \ax{\ustep{\tup{\ueqn{x}{M}, \U \| \abssub}}{\bot}}
+    \DisplayProof
+  \item[] \rulename{Elim}:
+    \rightl{($x \notin \FV{M}$)}
+    \ax{\ustep{\tup{\ueqn{x}{M}, \U \| \abssub}}{\tup{\U \set{x \mapsto M} \| \abssub \set{x \mapsto M}}}}
+    \DisplayProof
+\end{itemize}
+%
+\end{judgement}
+
+\begin{lemma}[Properties]
+\label{lem:unification-properties}
+If $\usteps{\tup{\U \| \emptyset}}{\tup{\nil \| \abssub}}$, then
+\begin{itemize}
+  \item $\abssub$ satisfies $\dom{\abssub} \cup \vran{\abssub} \subseteq \FV{\U}$
+  % in fact, eq instead of subseteq, but I only need subseteq
+	\item $\abssub$ is idempotent, and so $\dom{\abssub} \cap \vran{\abssub} = \emptyset$
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+% only one rule adds to construction, and look at the way it does so
+Omitted for now.
+\end{proof}
+
+\begin{lemma}[Soundness]
+\label{lem:unification-soundness}
+If $\usteps{\tup{\U \| \emptyset}}{\tup{\nil \| \abssub}}$, then $\abssub$ unifies every equation in $\U$.
+\end{lemma}
+
+\begin{proof}
+Omitted for now.
+\end{proof}
+
+\begin{lemma}[Completeness]
+\label{lem:unification-completeness}
+If $\abssubvar$ unifies every equation in $\U$, then any maximal sequence of transformations from $\tup{\U \| \emptyset}$ must end in some $\tup{\nil \| \abssub}$ such that $\abssub \abssub' = \abssubvar$ for some $\abssub'$ (i.e. $\abssub$ is a most general unifier).
+\end{lemma}
+
+\begin{proof}
+Omitted for now.
+\end{proof}
+
+\begin{lemma}[Correctness]
+\label{lem:unification-correctness}
+A unification problem $\U$ has a solution if and only if $\usteps{\tup{\U \| \emptyset}}{\tup{\nil \| \abssub}}$ is derivable for some $\abssub$, and in that case $\abssub \in \mgu{\U}$.
+\end{lemma}
+
+\begin{proof}
+Immediate from Lemma~\ref{lem:unification-properties}, \ref{lem:unification-soundness} and \ref{lem:unification-completeness}.
+\end{proof}
+
+Furthermore, it is easy to derive from this inference system a deterministic and terminating algorithm that either reports failure or generates a most general unifier with the properties of Lemma~\ref{lem:unification-properties}.
+
+Our motivation for introducing this formalisation, however, is to prove another property -- namely that well-typed unification problems have well-typed solutions.
+% this seems to (wrongly?) suggest that all solutions will be well-typed, as opposed to just one such solution
+
+\begin{definition}[Well-typed unification problems]
+\label{def:well-typed-unification-problems}
+An ordered unification problem $\U$ is \emph{well-typed} in a context $\ctx$ if either $\U = \nil$ or if $\U = (\ueqn{U}{U'}, \U')$ and both of the following hold:
+\begin{itemize}
+	\item For some type or kind $V$, we have $\hasType{\ctx}{U}{V}$ and $\hasType{\ctx}{U'}{V}$. That is, $U$ and $U'$ have the same type.
+  \item For every substitution $\sub$ with $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ such that $U[\sub] = U'[\sub]$, the unification problem $\U[\sub]$ is well-typed in $\ctx[\sub]$.
+  % I'm not sure about this. can't \sub be something strange? no wait, I suppose it matches something and so preserves types..
+\end{itemize}
+\end{definition}
+
+
+\begin{lemma}
+\label{lem:unification-invariants}
+Given a context $\ctx$, the following two conditions on unification states are together invariant under the transition relation.
+We say that $\bot$ vacuously satisfies the conditions; they are defined for pairs $\tup{\U \| \abssub}$.
+\begin{itemize}
+	\item $\U$ is well-typed in $\ctx \abssub$.
+  \item There exists $\sub$ with $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ such that $[\sub] = \abssub$.
+\end{itemize}
+\end{lemma}
+
+\begin{proof}
+Suppose we have $\ustep{\ustate}{\ustate'}$ (by $\E$) with $\ustate$ satisfying the conditions.
+We must show that $\ustate'$ satisfies the conditions as well.
+By case analysis on $\E$; the only interesting cases are \rulename{Decomp} and \rulename{Elim}.
+\begin{itemize}
+	\item Case \rulename{Decomp}: \\
+  We have $\ustate = \tup{\ueqn{f \; M_1 \; \ldots \; M_n}{f \; M_1' \; \ldots \; M_n'}, \U \| \abssub}$ and $\ustate' = \tup{\ueqn{M_1}{M_1'}, \ldots, \ueqn{M_n}{M_n'}, \U \| \abssub}$.
+  It suffices to show that $(\ueqn{M_1}{M_1'}, \ldots, \ueqn{M_n}{M_n'}, \U)$ is well-typed in $\ctx \abssub$.
+  Since by assumption $(\ueqn{f \; M_1 \; \ldots \; M_n}{f \; M_1' \; \ldots \; M_n'}, \U)$ is well-typed in $\ctx \abssub$, in particular we have a typing derivation
+  %
+  \begin{prooftree}
+  \ninf{$\typing{f}{(\Pi \; \typing{x_1}{P_1} \; \ldots \; \Pi \; \typing{x_n}{P_n} \, . \; V)} \in \sig$}
+  \uinf{\hasType{\ctx \abssub}{f}{(\Pi \; \typing{x_1}{P_1} \; \ldots \; \Pi \; \typing{x_n}{P_n} \, . \; V)}}
+  \prem{\T_1}{\hasType{\ctx \abssub}{M_1}{P_1}}
+  \binf{\hasType{\ctx \abssub}{f \; M_1}{(\Pi \; \typing{x_2}{P_2[\for{M_1}{x_1}]} \; \ldots \; \Pi \; \typing{x_n}{P_n[\for{M_1}{x_1}]} \, . \; V[\for{M_1}{x_1}])}}
+  \noLine
+  \uinf{$\vdots$}
+  \noLine
+  \uinf{\hasType{\ctx \abssub}{f \; M_1 \; \ldots \; M_{n-1}}{(\pi{\typing{x_n}{P_n \abssubvar}}{V \abssubvar}})}
+  \prem{\T_n}{\hasType{\ctx \abssub}{M_n}{P_n \abssubvar}}
+  \leftl{$\T =$}
+  \binf{\hasType{\ctx \abssub}{f \; M_1 \; \ldots \; M_n}{V \abssubvar [\for{M_n}{x_n}]}}
+  \end{prooftree}
+  %
+  (where $\abssubvar = [\for{M_1}{x_1}] \ldots [\for{M_{n-1}}{x_{n-1}}]$) and an analogous $\T'$ (containing $\T_1', \ldots, \T_n'$) showing $\hasType{\ctx \abssub}{f \; M_1' \; \ldots \; M_n'}{V [\for{M_1'}{x_1}] \ldots [\for{M_n'}{x_n}]}$.
+  % note: we do not use in this case that the types are equal, i.e. that (V \abssubvar [\for{M_n}{x_n}]) == (V \abssubvar' [\for{M_n'}{x_n}]).
+  % in fact, we could argue that they MUST be equal.
+  
+  By $\T_1$ and $\T_1'$, we have that $M_1$ and $M_1'$ have the same type.
+  Now suppose there exists $\sub_1$ with $\subHasCtx{\ctx \abssub [\sub_1]}{\sub_1}{\ctx \abssub}$ such that $M_1[\sub_1] = M_1'[\sub_1]$.
+  Applying $\sub_1$ to $M_2$ and $M_2'$, we get $\hasType{\ctx \abssub [\sub_1]}{M_2[\sub_1]}{P_2[\for{M_1}{x_1}][\sub_1]}$ and $\hasType{\ctx \abssub [\sub_1]}{M_2'[\sub_1]}{P_2[\for{M_1'}{x_1}][\sub_1]}$ (by $\T_2$ and $\T_2'$).
+  And since $M_1[\sub_1] = M_1'[\sub_1]$, we clearly have $P_2[\for{M_1}{x_1}][\sub_1] = P_2[\for{M_1'}{x_1}][\sub_1]$ as required.
+  
+  Repeating this argument (formally by mathematical induction on $n$), we eventually get
+  \[ \hasType{\ctx \abssub [\sub_1] \ldots [\sub_{n-1}]}{M_n[\sub_1] \ldots [\sub_{n-1}]}{P_n[\for{M_1}{x_1}] \ldots [\for{M_{n-1}}{x_{n-1}}][\sub_1] \ldots [\sub_{n-1}]} \]
+  and
+  \[ \hasType{\ctx \abssub [\sub_1] \ldots [\sub_{n-1}]}{M_n'[\sub_1] \ldots [\sub_{n-1}]}{P_n[\for{M_1'}{x_1}] \ldots [\for{M_{n-1}'}{x_{n-1}}][\sub_1] \ldots [\sub_{n-1}]} \]
+  with
+  \[ P_n[\for{M_1}{x_1}] \ldots [\for{M_{n-1}}{x_{n-1}}][\sub_1] \ldots [\sub_{n-1}] = P_n[\for{M_1'}{x_1}] \ldots [\for{M_{n-1}'}{x_{n-1}}][\sub_1] \ldots [\sub_{n-1}] \]
+  
+  Suppose now we have $\sub_n$ with $\subHasCtx{\ctx \abssub [\sub_1] \ldots [\sub_n]}{\sub_n}{\ctx \abssub [\sub_1] \ldots [\sub_{n-1}]}$ such that $M_n[\sub_1] \ldots [\sub_n] = M_n'[\sub_1] \ldots [\sub_n]$.
+  Then by composition, we get $\sub \mdefi (\sub_1 \circ \ldots \circ \sub_n)$ with $\subHasCtx{\ctx \abssub [\sub_1] \ldots [\sub_n]}{\sub}{\ctx \abssub}$ and $M_i[\sub] = M_i'[\sub]$ for all $i$.
+  % be careful with this composition. is it safe? do we need the composition lemma, which is currently defined only for VALID contexts?
+  Clearly, $\sub$ also satisfies $(f \; M_1 \; \ldots \; M_n)[\sub] = (f \; M_1' \; \ldots \; M_n')[\sub]$.
+  So, by assumption, $\U$ is well-typed in $\ctx \abssub [\sub] = \ctx \abssub [\sub_1] \ldots [\sub_n]$.
+  And hence $(\ueqn{M_1}{M_1'}, \ldots, \ueqn{M_n}{M_n'}, \U)$ is well-typed in $\ctx \abssub$.
+  % surely, you can manage a clearer proof once the definitions (of well-typed problems and of the invariants) are refined
+  
+  \item Case \rulename{Elim}: \\
+  We have $\ustate = \tup{\ueqn{x}{M}, \U \| \abssub}$ with $x \notin \FV{M}$ and $\ustate' = \tup{\U \set{x \mapsto M} \| \abssub \set{x \mapsto M}}$.
+  Since by assumption $(\ueqn{x}{M}, \U)$ is well-typed in $\ctx \abssub$, in particular we have $\hasType{\ctx \abssub}{M}{P_x}$ (by $\T$) where $(\typing{x}{P_x}) \in \ctx \abssub$.
+  Extending the substitution $(\for{M}{x})$ with identity bindings to match $\ctx \abssub$, by $\T$ we then have $\subHasCtx{\ctx \abssub [\for{M}{x}]}{\sub}{\ctx \abssub}$ for some $\sub$ with $[\sub] = [\for{M}{x}] = \set{x \mapsto M}$.
+  % is this unclear? I could introduce and prove a little lemma about extending a concrete substitution to match a context
+  And naturally, noting $x \notin \FV{M}$, we have $x[\sub] = M[\sub]$.
+  Then, by assumption, $\U \set{x \mapsto M} = \U[\sub]$ is well-typed in $\ctx (\abssub \set{x \mapsto M}) = \ctx \abssub \set{x \mapsto M} = \ctx \abssub [\sub]$.
+  
+  Finally, by assumption, there exists $\subvar$ with $\subHasCtx{\ctx[\subvar]}{\subvar}{\ctx}$ such that $[\subvar] = \abssub$.
+  But then the composition $\subvar \circ \sub$ satisfies $\subHasCtx{\ctx[\subvar \circ \sub]}{\subvar \circ \sub}{\ctx}$ and $[\subvar \circ \sub] = \abssub \set{x \mapsto M}$ as required.
+  And so both conditions hold for $\ustate'$.
+  % if the composition lemma doesn't hold for non-valid substitutions (IT DOES NOT), I need to refine this lemma.
+\end{itemize}
+\end{proof}
+
+\begin{lemma}
+\label{lem:unification-existence}
+If a unification problem $\U$ well-typed in $\ctx$ has a solution, then there exists $\sub$ with $\subHasCtx{\ctx[\sub] \setminus \dom{[\sub]}}{\sub}{\ctx}$ such that $[\sub] \in \mgu{\U}$.
+\end{lemma}
+
+\begin{proof}
+Suppose $\U$ has a solution.
+Then we know that $\usteps{\tup{\U \| \emptyset}}{\tup{\nil \| \abssub}}$ is derivable for some $\abssub \in \mgu{\U}$.
+% by completeness!
+Since $\U$ is well-typed in $\ctx \emptyset = \ctx$, and $\idsub_{\ctx}$ satisfies $\subHasCtx{\ctx[\idsub_{\ctx}]}{\idsub_{\ctx}}{\ctx}$ and $[\idsub_{\ctx}] = \emptyset$, the two conditions of Lemma~\ref{lem:unification-invariants} are satisfied for $\tup{\U \| \emptyset}$.
+Hence, by Lemma~\ref{lem:unification-invariants}, there exists $\sub$ with $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ such that $[\sub] = \abssub$ (and so $[\sub] \in \mgu{\U}$ as required).
+
+And since we have $\dom{[\sub]} \cap \vran{[\sub]} = \emptyset$, certainly $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ implies $\subHasCtx{\ctx[\sub] \setminus \dom{[\sub]}}{\sub}{\ctx}$ (the same derivation suffices).
+\end{proof}
+
+\begin{lemma}
+\label{lem:unification-mgu}
+Let $\ctx$ and $\ctxvar$ be valid contexts such that $\ctxvar \subseteq \ctx[\sub] \setminus \dom{[\sub]}$.
+Let $\ctx'$ be a (not necessarily valid) context, $\sub$ and $\subvar$ concrete substitutions such that $\subHasCtx{\ctxvar}{\sub}{\ctx}$ and $\subHasCtx{\ctx'}{\subvar}{\ctx}$.
+Let $\U$ be a unification problem, and suppose $[\sub] \in \mgu{\U}$ and $[\subvar]$ a unifier of the equation in $\U$.
+Then there exists a concrete substitution $\sub'$ such that $[\subvar] = [\sub][\sub']$ and $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$.
+% should probably be changed to ``.. such that $[\subvar] = [\sub \circ \sub']$ ..''
+\end{lemma}
+
+\begin{proof}
+Since $[\sub]$ is a most general unifier of the elements of $\U$, there exists an abstract substitution $\abssub$ such that $[\subvar] = [\sub] \abssub$.
+We show by structural induction on $\ctxvar$ that there exists a concrete substitution $\sub'$ such that $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$ and which agrees with $\abssub$ on all $x \in \dom{\ctxvar}$.
+\begin{itemize}
+	\item Case $\ctxvar = (\nil)$ \\
+  Take $\sub' = \emptysub$; the empty substitution satisfies $\subHasCtx{\ctx'}{\emptysub}{\nil}$ (by rule \rulename{S-Nil}) and vacuously agrees with $\abssub$ on all $x \in \dom{\nil} = \emptyset$.
+  \item Case $\ctxvar = (\ctxvar', \typing{x}{P_x[\sub]})$ \\
+  By the induction hypothesis on $\ctxvar'$, there exists $\sub''$ with $\subHasCtx{\ctx'}{\sub''}{\ctxvar'}$ (by some $\E$) and $[\sub''] = \restr{\abssub}{\dom{\ctxvar'}}$.
+  Now take $\sub' = (\sub'', \for{x[\subvar]}{x})$.
+  Since $x \notin \dom{[\sub]}$ (by definition of $\ctxvar$), we have $x \abssub = x [\sub] \abssub = x[\subvar]$, and so $[\sub'] = \restr{\abssub}{\dom{\ctxvar}}$ as required.
+  
+  We have $\subHasCtx{\ctx'}{\subvar}{\ctx}$ by assumption, and any derivation of this must contain a derivation $\T$ of $\hasType{\ctx'}{x[\subvar]}{P_x[\subvar]}$ (since $x \in \dom{\ctx}$).
+  Finally, noting $P_x[\sub][\sub''] = P_x[\sub]\abssub = P_x[\subvar]$ (since $\FV{P_x[\sub]} \subseteq \dom{\ctxvar'}$), we construct a derivation of $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$.
+  %
+  \begin{prooftree}
+  \prem{\E}{\subHasCtx{\ctx'}{\sub''}{\ctxvar'}}
+  \prem{\T}{\hasType{\ctx'}{x[\subvar]}{P_x[\sub][\sub'']}}
+  \binf{\subHasCtx{\ctx'}{(\sub'', \for{x[\subvar]}{x})}{(\ctxvar', \typing{x}{P_x[\sub]})}}
+  \end{prooftree}
+  %
+\end{itemize}
+Hence there exists $\sub'$ such that $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$ and $[\sub'] = \restr{\abssub}{\dom{\ctxvar}}$.
+Since $\dom{\abssub} \subseteq \dom{\ctx}$, $\sub'$ and $\abssub$ agree everywhere outside of $\dom{\ctx}$ as well.
+And since $\dom{[\sub]} \cap \vran{[\sub]} = \emptyset$, agreement is irrelevant for $\dom{[\sub]}$.
+So $[\sub][\sub'] = [\sub]\abssub = [\subvar]$.
+\end{proof}
+
+%%% end

@@ -2,22 +2,136 @@
 
 \section*{Preliminaries}
 
-We recall
+\subsection*{LF Syntax}
+
+We recall our limited LF syntax:
 \begin{align*}
   K &\defi \type \alt \pi{\typing{x}{P}}{K} \\
   P &\defi a \alt \app{P}{M} \\
   A &\defi P \alt \pi{\typing{x}{P}}{A} \\
-  M, N &\defi c \alt x \alt \app{M}{N} \\
-  \\
-  \sig &\defi \nil \alt \cons{\sig}{\typing{a}{K}} \alt \cons{\sig}{\typing{c}{A}} \\
-  \ctx &\defi \nil \alt \cons{\ctx}{\typing{x}{P}} \\
-  \sub &\defi \emptysub \alt \cons{\sub}{\for{M}{x}}
+  N &\defi c \alt \app{N}{M} \\
+  M &\defi N \alt x
+\end{align*}
+So $K$ will denote kinds, $P$ primitive types, $A$ general types, $N$ composite objects, and $M$ general objects.
+And $T$ will occasionally denote a term, i.e. anything allowed in the above categories.
+We will also use the meta-variable $U$ to range over both types and objects ($A$ and $M$) and similarly $V$ for kinds and types ($K$ and $A$).
+The meta-variables $a$, $c$ and $x$ (also $y$) range over some implicit sets of symbols -- of type constants, object constants and variables, respectively.
+
+We employ the common distinction between \emph{bound} and \emph{free} variable occurrences in a term.
+For any term $T$, let $\FV{T}$ denote the set of variables that occur free in $T$.
+A term $T$ is said to be \emph{ground} if it contains only bound variable occurrences, i.e. if $\FV{T} = \emptyset$.
+
+
+
+\subsection*{Substitution}
+
+We need a notion of substitution, and it will be convenient to distinguish between two related concepts -- abstract and concrete substitutions.
+
+\begin{definition}[Abstract substitution]
+\label{def:abstract-substitution}
+An \emph{abstract substitution} is a mapping from variables to objects; from the set of all variable symbols to the syntactic category of objects.
+It is required that such a mapping is the identity on all but a finite subset of variables known as its \emph{domain}.
+(We denote abstract substitutions with the meta-variables $\abssub$ and $\abssubvar$.)
+\end{definition}
+
+By convention, application of substitutions is written in suffix notation, i.e. $x \abssub$ instead of $\abssub(x)$.
+We define
+\begin{align*}
+  \dom{\abssub} &\mdefi \set{x \| x \abssub \neq x} \\
+  \vran{\abssub} &\mdefi \bigcup{\set{\FV{x \abssub} \| x \in \dom{\abssub}}}
 \end{align*}
 
-{ % judgement
-\vspace{0.5cm}
-\noindent \framebox{\hasType{\ctx}{M}{A}}
+Since the domain of an abstract substitution $\abssub$ must be finite, say $\dom{\abssub} = \set{x_1, \ldots, x_n}$, we can unambiguously represent $\abssub$ by a set of mappings $\set{x_1 \mapsto x_1 \abssub, \ldots, x_n \mapsto x_n \abssub}$.
+Note, however, that such a set does not represent an abstract substitution if it contains multiple mappings for any one variable, i.e. it must represent a (partial) function.
+$\emptyset$ is then the identity substitution.
 
+Composition of abstract substitutions is denoted by juxtaposition, i.e. $x (\abssubvar \abssub) \mdefi (x \abssubvar) \abssub$ for all $x$.
+(Due to the suffix notation, composition here is naturally read left-to-right as opposed to regular function composition.)
+The restriction of an abstract substitution $\abssub$ to a set of variables $X$ (typically intersecting non-trivially with its domain), written $\restr{\abssub}{X}$, is the abstract substitution $\set{x \mapsto x \abssub \| x \in \dom{\abssub} \cap X}$.
+
+Abstract substitutions are tacitly lifted to act on terms (objects, types or kinds) in a capture-avoiding manner, e.g. for types:
+\[ A \abssub \mdefi
+  \begin{cases}
+    a \; M_1 \abssub \; \ldots \; M_n \abssub           & \text{if $A = a \; M_1 \; \ldots \; M_n$} \\
+    \pi{\typing{y}{P \abssub}}{(A' \abssubvar) \abssub} & \text{if $A = \pi{\typing{x}{P}}{A'}$,} \\
+                                                        & \text{letting $\abssubvar = \set{x \mapsto y}$ for some $y \notin \dom{\abssub} \cup \vran{\abssub} \cup \FV{A}$}
+  \end{cases}
+\]
+% define inductively instead? and argue that it isn't a problem that (A' \abssubvar) is not a subterm of A!
+% maybe note that this definition might rename unnecessarily in cases where x \notin \dom{\abssub} \cup \vran{\abssub}
+
+\begin{definition}[Concrete substitution]
+\label{def:concrete-substitution}
+A \emph{(concrete) substitution} is an ordered list of pairs of variables and objects, using the notation $\for{M}{x}$ (read as ``$M$ for $x$'') for the pair $\tup{x, M}$:
+\[ \sub, \subvar \defi \emptysub \alt \sub, \for{M}{x} \]
+\end{definition}
+
+$\emptysub$ denotes the empty list, but we will occasionally omit the symbol when listing a concrete substitution, e.g. $(\for{M_x}{x}, \for{M_y}{y})$ instead of $(\emptysub, \for{M_x}{x}, \for{M_y}{y})$.
+We require that any non-empty concrete substitution $(\sub, \for{M_x}{x})$ satisfies $x \neq y$ for all $\for{M_y}{y} \in \sub$.
+% note the 'member' notation borrowed from set theory, maybe even define it (assuming it is first used here)
+% consider defining the domain/support of a concrete substitution to be \set{x \| \for{M}{x} \in \sub}
+
+A concrete substitution $\sub = (\emptysub, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})$ naturally \emph{represents} a unique abstract substitution, written $[\sub]$, namely $\set{x_1 \mapsto M_1, \ldots, x_n \mapsto M_n}$.
+We can ignore those $i$ for which $M_i = x_i$, since making identity mappings explicit has no effect on abstract substitutions.
+Of course, an abstract substitution is in turn represented by many different concrete substitutions (in fact, with a domain of $n$ variables there will be $n!$ different ways of ordering the list, and adding explicit identity pairs for variables outside the domain leads to an infinite number of substitutions).
+
+
+
+\subsection*{Signatures and Contexts}
+
+We wish to work with terms that are ``valid'' relative to a signature and a context.
+Signatures ($\sig$) associate constants with types and kinds, and contexts ($\ctx$) associative variables with primitive types:
+\begin{align*}
+  \sig &\defi \nil \alt \sig, \typing{a}{K} \alt \sig, \typing{c}{A} \\
+  \ctx, \ctxvar, \ctxvarvar &\defi \nil \alt \ctx, \typing{x}{P}
+\end{align*}
+
+Here, $\nil$ denotes the empty list.
+We require that any non-empty context $(\ctx, \typing{x}{P_x})$ satisfies $x \neq y$ for all $\typing{y}{P_y} \in \ctx$.
+Similarly, any signature of the form $(\sig, \typing{a}{K})$ must satisfy $a \neq a'$ for all $\typing{a'}{K'} \in \sig$ -- and analogously for signatures of the form $(\sig, \typing{c}{A})$.
+That is, contexts and signatures must be (partial) functions.
+
+The \emph{domain} of a context $\ctx = (\nil, \typing{x_1}{P_1}, \ldots, \typing{x_n}{P_n})$, written $\dom{\ctx}$, is the set of variables $\set{x_1, \ldots, x_n}$.
+Given a context $\ctx$ and a set of variables $X$, typically $X \subseteq \dom{\ctx}$, we let $\ctx \setminus X$ be the context $\ctx$ with all assignments $\typing{x}{P}$ for $x \in X$ removed.
+We will borrow further notation from set theory and write $\ctx \subseteq \ctx'$ when $\ctx$ is a subset of $\ctx'$, both viewed as sets of assignments (i.e. disregarding the orders).
+
+Concatenation of two contexts will, by abuse of notation, be denoted with a comma.
+That is, if $\ctx = (\nil, \typing{x_1}{P_1}, \ldots, \typing{x_m}{P_m})$ and $\ctx' = (\nil, \typing{x_1'}{P_1'}, \ldots, \typing{x_n'}{P_n'})$ with $\dom{\ctx} \cap \dom{\ctx'} = \emptyset$ then $(\ctx, \ctx') \mdefi (\nil, \typing{x_1}{P_1}, \ldots, \typing{x_m}{P_m}, \typing{x_1'}{P_1'}, \ldots, \typing{x_n'}{P_n'})$.
+
+A term $T$ is \emph{ground with respect to} a context $\ctx$ if $\FV{T} \subseteq \dom{\ctx}$.
+Clearly, $T$ is ground (as previously defined) if it is ground with respect to the empty context.
+
+Letting $\ctx = (\nil, \typing{x_1}{P_1}, \ldots, \typing{x_n}{P_n})$, we will occasionally write $\pi{\ctx}{P}$ as an economical shorthand for $\Pi \, \typing{x_1}{P_1} \, \ldots \, \Pi \, \typing{x_n}{P_n} . \, P$.
+And for a constant $c$, $\app{c}{\ctx}$ is shorthand for the object $c \; x_1 \; \ldots \; x_n$.
+
+Having introduced contexts, we again lift abstract substitutions to act on contexts; $\ctx \abssub$ is the result of applying $\abssub$ to each primitive type in $\ctx$.
+
+\subsection*{LF Type System}
+
+We are now ready to present the type system of our limited LF.
+
+%First, we need a judgement for looking up the type of a variable in a context -- and analogous judgements for lookup in signatures.
+%
+%\begin{judgement}{$(\typing{x}{P}) \in \ctx$}
+%{$x$ is assigned type $P$ in $\ctx$}
+%%
+%\begin{prooftree}
+  %\leftl{\rulename{L-Here} :}
+  %\ax{$(\typing{x}{P}) \in (\ctx, \typing{x}{P})$}
+%\end{prooftree}
+%
+%\begin{prooftree}
+  %\ninf{$(\typing{x}{P}) \in \ctx$}
+  %\leftl{\rulename{L-There} :}
+  %\rightl{($x' \neq x$)}
+  %\uinf{$(\typing{x}{P}) \in (\ctx, \typing{x'}{P'})$}
+%\end{prooftree}
+%%
+%\end{judgement}
+
+\begin{judgement}{\hasType{\ctx}{M}{A}}
+{$M$ has type $A$ relative to $\ctx$ (and $\sig$)}
+%
 \begin{prooftree}
   \ninf{$(\typing{c}{A}) \in \sig$}
   \leftl{\rulename{M-Const} :}
@@ -31,19 +145,17 @@ We recall
 \end{prooftree}
 
 \begin{prooftree}
-  \ninf{\hasType{\ctx}{M}{(\pi{\typing{x}{P}}{A}})}
-  \ninf{\hasType{\ctx}{N}{P}}
+  \ninf{\hasType{\ctx}{N}{(\pi{\typing{x}{P}}{A}})}
+  \ninf{\hasType{\ctx}{M}{P}}
   \leftl{\rulename{M-App} :}
-  \binf{\hasType{\ctx}{\app{M}{N}}{\subst{A}{\for{N}{x}}}}
+  \binf{\hasType{\ctx}{\app{N}{M}}{A[\for{M}{x}]}}
 \end{prooftree}
+%
+\end{judgement}
 
-\vspace{0.5cm}
-}
-
-{ % judgement
-\vspace{0.5cm}
-\noindent \framebox{\hasKind{\ctx}{P}{K}}
-
+\begin{judgement}{\hasKind{\ctx}{P}{K}}
+{$P$ has kind $K$ relative to $\ctx$ (and $\sig$)}
+%
 \begin{prooftree}
   \ninf{$(\typing{a}{K}) \in \sig$}
   \leftl{\rulename{P-Atom} :}
@@ -54,44 +166,101 @@ We recall
   \ninf{\hasKind{\ctx}{P}{(\pi{\typing{x}{P'}}{K}})}
   \ninf{\hasType{\ctx}{M}{P'}}
   \leftl{\rulename{P-App} :}
-  \binf{\hasKind{\ctx}{\app{P}{M}}{\subst{K}{\for{M}{x}}}}
+  \binf{\hasKind{\ctx}{\app{P}{M}}{K[\for{M}{x}]}}
 \end{prooftree}
+%
+\end{judgement}
 
-\vspace{0.5cm}
-}
-
-We will use $U$ to stand for either an object or a type, and $V$ to stand for either a type or a kind.
-Letting $\ctx = \nil, \typing{x_1}{P_1}, ..., \typing{x_n}{P_n}$, we will write $\pi{\ctx}{P}$ as a shorthand for $\Pi \; \typing{x_1}{P_1} \; ... \; \Pi \; \typing{x_n}{P_n} \, . \; P$. 
-And for a constant $c$, $\app{c}{\ctx}$ is shorthand for $c \; x_1 \; ... \; x_n$.
-
-To ensure that substitutions transform terms well-typed in one context into terms well-typed in another, we define a typing judgement for substitutions:
-
-{ % judgement
-\vspace{0.5cm}
-\noindent \framebox{\subHasCtx{\ctx'}{\sub}{\ctx}}
-
+\begin{judgement}{\isType{\ctx}{A}}
+{$A$ is a valid type relative to $\ctx$ (and $\sig$)}
+%
 \begin{prooftree}
-  \leftl{\rulename{S-Nil} :}
-  \ax{\subHasCtx{\ctx'}{\emptysub}{\nil}}
+  \ninf{\hasKind{\ctx}{P}{\type}}
+  \leftl{\rulename{A-Prim} :}
+  \uinf{\isType{\ctx}{P}}
 \end{prooftree}
 
 \begin{prooftree}
-  \ninf{\subHasCtx{\ctx'}{\sub}{\ctx}}
-  \ninf{\hasType{\ctx'}{M}{\subst{P}{\sub}}}
-  \leftl{\rulename{S-Cons} :}
-  \binf{\subHasCtx{\ctx'}{(\sub, M/x)}{(\ctx, \typing{x}{P})}}
+  \ninf{\isType{\ctx}{P}}
+  \ninf{\isType{\ctx, \typing{x}{P}}{A}}
+  \leftl{\rulename{A-Pi} :}
+  \rightl{($x \notin \dom{\ctx}$)}
+  \binf{\isType{\ctx}{\pi{\typing{x}{P}}{A}}}
+\end{prooftree}
+%
+\end{judgement}
+
+\begin{judgement}{\isKind{\ctx}{K}}
+{$A$ is a valid kind relative to $\ctx$ (and $\sig$)}
+%
+\begin{prooftree}
+  \leftl{\rulename{K-Type} :}
+  \ax{\isKind{\ctx}{\type}}
 \end{prooftree}
 
-\vspace{0.5cm}
-}
+\begin{prooftree}
+  \ninf{\isType{\ctx}{P}}
+  \ninf{\isKind{\ctx, \typing{x}{P}}{K}}
+  \leftl{\rulename{K-Pi} :}
+  \rightl{($x \notin \dom{\ctx}$)}
+  \binf{\isKind{\ctx}{\pi{\typing{x}{P}}{K}}}
+\end{prooftree}
+%
+\end{judgement}
 
-Applying a substitution $\subHasCtx{\ctx'}{\sub}{\ctx}$ to a term $\hasKind{\ctx}{U}{V}$ then yields $\hasKind{\ctx'}{U[\sub]}{V[\sub]}$.
-Composition of substitutions is given by $\comp{\emptysub}{\sub} = \emptysub$ and $\comp{(\sub', \for{M}{x})}{\sub} = (\comp{\sub'}{\sub}, \for{\subst{M}{\sub}}{x})$.
+\begin{judgement}{\isSig{\sig}}
+{$\sig$ is a valid signature}
+%
+\begin{prooftree}
+  \leftl{\rulename{Sig-Nil} :}
+  \ax{\isSig{\nil}}
+\end{prooftree}
 
-Let $\S = \set{\subHasCtx{\ctx_i}{\sub_i}{\ctx} \;\;|\;\; i = 1, ..., n}$ be a set of substitutions, for some context $\ctx$.
-$\S$ is \textit{non-redundant} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there is at most one $(\subHasCtx{\ctx_i}{\sub_i}{\ctx}) \in \S$ for which there exists $\subHasCtx{\nil}{\sub_i'}{\ctx_i}$ such that $\sub = \comp{\sub_i}{\sub_i'}$.
-$\S$ is \textit{complete} if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there is at least one such $(\subHasCtx{\ctx_i}{\sub_i}{\ctx}) \in \S$.
-Hence $\S$ is both non-redundant and complete if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, there is a unique $(\subHasCtx{\ctx_i}{\sub_i}{\ctx}) \in \S$ for which there exists $\subHasCtx{\nil}{\sub_i'}{\ctx_i}$ such that $\sub = \comp{\sub_i}{\sub_i'}$.
+\begin{prooftree}
+  \ninf{\isSig{\sig}}
+  \ninf{\isKind{\nil}{K}}
+  \leftl{\rulename{Sig-Kind} :}
+  \binf{\isSig{\sig, \typing{a}{K}}}
+\end{prooftree}
 
-A unification problem $E$ is taken to be a set of equalities $U \approx U'$ between either primitive types or objects (containing free variables on both sides).
-Since we are only dealing with first-order unification, it is decidable whether $E$ results in failure or a most general unifier (mgu) $\sub$.
+\begin{prooftree}
+  \ninf{\isSig{\sig}}
+  \ninf{\isType{\nil}{A}}
+  \leftl{\rulename{Sig-Type} :}
+  \binf{\isSig{\sig, \typing{c}{A}}}
+\end{prooftree}
+%
+\end{judgement}
+
+\begin{judgement}{\isCtx{\ctx}}
+{$\ctx$ is a valid context (relative to $\sig$)}
+%
+\begin{prooftree}
+  \leftl{\rulename{Ctx-Nil} :}
+  \ax{\isCtx{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isCtx{\ctx}}
+  \ninf{\isType{\ctx}{P}}
+  \leftl{\rulename{Ctx-Cons} :}
+  \rightl{($x \notin \dom{\ctx}$)}
+  \binf{\isCtx{\ctx, \typing{x}{P}}}
+\end{prooftree}
+%
+\end{judgement}
+
+In particular, the types of a valid context are ground with respect to the previous assignments in the context.
+It should be noted that adding assignments to or removing assignments from valid contexts will not in general preserve validity.
+And $\ctx \abssub$ is generally not a valid context either, even if $\ctx$ is valid.
+Indeed, we will need to be careful about whether or not a given context is valid.
+
+Clearly, if $\ctx$ and $\ctx'$ are both valid, then the concatenation $(\ctx, \ctx')$ is a valid context.
+% note: we will use this result tacitly
+
+% consider defining an explicit weakening lemma for typing derivations
+
+We will, however, only deal with signatures that are valid:
+In the following, we will take for granted the presence of a given valid signature $\sig$; all definitions and lemmas should really begin with ``Let $\sig$ be a valid signature.''
+
+%%% end

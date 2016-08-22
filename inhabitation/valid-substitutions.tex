@@ -1,0 +1,173 @@
+\clearpage
+
+\section*{Valid Substitutions}
+
+We wish to work with sensible substitutions -- that map terms well-typed in one context to terms well-typed in another.
+Hence we define a typing judgement for (concrete) substitutions:
+
+\begin{judgement}{\subHasCtx{\ctx'}{\sub}{\ctx}}
+{$\sub$ is a valid substitution, matching $\ctx$, relative to $\ctx'$ (and $\sig$)}
+%
+\begin{prooftree}
+  \leftl{\rulename{S-Nil} :}
+  \ax{\subHasCtx{\ctx'}{\emptysub}{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\subHasCtx{\ctx'}{\sub}{\ctx}}
+  \ninf{\hasType{\ctx'}{M}{P[\sub]}}
+  \leftl{\rulename{S-Cons} :}
+  \binf{\subHasCtx{\ctx'}{(\sub, \for{M}{x})}{(\ctx, \typing{x}{P})}}
+\end{prooftree}
+%
+\end{judgement}
+
+Given $\ctx$ and $\sub$, we say that $\sub$ matches $\ctx$ if there exists $\ctx'$ such that $\subHasCtx{\ctx'}{\sub}{\ctx}$.
+If $\sub$ matches $\ctx$, we have in particular $\dom{[\sub]} \subseteq \dom{\ctx}$.
+For any valid context $\ctx$, we define $\idsub_{\ctx}$ to be the identity substitution with explicit bindings for all $x \in \dom{\ctx}$ in order.
+Then clearly $\subHasCtx{\ctx}{\idsub_{\ctx}}{\ctx}$.
+
+% note that we may extend a substitution with identity bindings to match a larger context
+
+The following lemma states the desired property that valid substitutions map terms well-typed in one context to terms well-typed in another.
+
+\begin{lemma}[Valid substitutions preserve validity]
+\label{lem:substitutions-preserve-validity}
+Let $\sub$ be a substitution, $\ctx$ and $\ctx'$ contexts, $\ctx$ valid, $U$ and $V$ terms.
+If $\subHasCtx{\ctx'}{\sub}{\ctx}$ (by $\E$) and $\hasType{\ctx}{U}{V}$ (by $\T$), then $\hasType{\ctx'}{U[\sub]}{V[\sub]}$ (by some $\T'$).
+\end{lemma}
+
+\begin{proof}
+% We only show the cases where $U$ is an object and $V$ a type; the remaining cases are analogous.
+Omitted for now.
+\end{proof}
+
+Note that we do not require the contexts in the judgement $\subHasCtx{\ctx'}{\sub}{\ctx}$ to be valid.
+And given $\sub$ and $\ctx$, there clearly may be infinitely many choices for the context $\ctx'$.
+Fortunately, as the following lemmas attest, there is always a ``least'' $\ctx'$ which is in fact valid.
+
+\begin{lemma}
+\label{lem:minimal-codomain-object}
+Let $\ctx$ and $\ctxvarvar$ be contexts, $\ctx$ valid (but $\ctxvarvar$ not necessarily so), such that $\ctx \subseteq \ctxvarvar$.
+Let $M$ be an object and $P$ a type such that $\isType{\ctx}{P}$, and suppose $\hasType{\ctxvarvar}{M}{P}$ (by $\T$).
+Then there exists $\ctx'$ with $\dom{\ctx} \cap \dom{\ctx'} = \emptyset$ such that $(\ctx, \ctx')$ is valid, $(\ctx, \ctx') \subseteq \ctxvarvar$ and $\hasType{(\ctx, \ctx')}{M}{P}$ (by some $\T'$).
+\end{lemma}
+
+\begin{proof}
+By induction on $\T$, case analysis on $M$.
+
+\begin{itemize}
+	\item Case $M = x$ \\
+  We have
+  %
+  \begin{prooftree}
+  \ninf{$(\typing{x}{P}) \in \ctxvarvar$}
+  \leftl{$\T =$}
+  \uinf{\hasType{\ctxvarvar}{x}{P}}
+  \end{prooftree}
+  %
+  If $x \in \dom{\ctx}$, we must have $(\typing{x}{P}) \in \ctx$ (since $\ctx \subseteq \ctxvarvar$), and so we can take $\ctx' = \nil$ and construct $\T'$ using rule \rulename{M-Var}.
+  Otherwise, take $\ctx' = \typing{x}{P}$ (noting $\isType{\ctx}{P}$).
+    
+  \item Case $M = c \; M_1 \; \ldots \; M_n$ \\
+  So $\T$ contains a subderivation $\I$ of $\typing{c}{(\Pi \; \typing{x_1}{P_1} \; \ldots \; \Pi \; \typing{x_n}{P_n} \, . \; P_c)} \in \sig$ and subderivations $\T_i$, for $i = 1, \ldots, n$, of $\hasType{\ctxvarvar}{M_i}{P_i[\for{M_1}{x_1}]\ldots[\for{M_{i-1}}{x_{i-1}}]}$.
+  And $P = P_c[\for{M_1}{x_1}]\ldots[\for{M_n}{x_n}]$.
+  
+  Noting $\isType{\ctx}{P_1}$ (since $P_1$ must be ground by validity of $\sig$), by the IH on $\T_1$ with $\ctx$, we get $\T_1'$ showing $\hasType{(\ctx, \ctx_1)}{M_1}{P_1}$ for some $\ctx_1$ such that $(\ctx, \ctx_1)$ is valid and $(\ctx, \ctx_1) \subseteq \ctxvarvar$.
+  Then, noting $\isType{(\ctx, \ctx_1)}{P_2[\for{M_1}{x_1}]}$ (by $\T_1'$ and the validity of $\sig$), by the IH on $\T_2$ with $(\ctx, \ctx_1)$, we get $\T_2'$ showing $\hasType{(\ctx, \ctx_1, \ctx_2)}{M_2}{P_2[\for{M_1}{x_1}]}$ for some $\ctx_2$ such that $(\ctx, \ctx_1, \ctx_2)$ is valid and $(\ctx, \ctx_1, \ctx_2) \subseteq \ctxvarvar$.
+  And so on, formally by mathematical induction on $n$, until finally we get $\T_n'$ showing $\hasType{(\ctx, \ctx_1, \ldots, \ctx_n)}{M_n}{P_n[\for{M_1}{x_1}]\ldots[\for{M_{n-1}}{x_{n-1}}]}$ for some $\ctx_n$ such that $(\ctx, \ctx_1, \ldots, \ctx_n)$ is valid and $(\ctx, \ctx_1, \ldots, \ctx_n) \subseteq \ctxvarvar$.
+  
+  Now take $\ctx' = (\ctx_1, \ldots, \ctx_n)$.
+  Weakening $\T_i'$ to show $\hasType{(\ctx, \ctx_1, \ldots, \ctx_n)}{M_i}{P_i[\for{M_1}{x_1}]\ldots[\for{M_{i-1}}{x_{i-1}}]}$, for $i = 1, \ldots, n-1$, we can use these along with $\I$ to construct a derivation of $\hasType{(\ctx, \ctx_1, \ldots, \ctx_n)}{c \; M_1 \; \ldots \; M_n}{P_c[\for{M_1}{x_1}]\ldots[\for{M_n}{x_n}]}$ as required.
+\end{itemize}
+%
+\end{proof}
+
+\begin{lemma}
+\label{lem:minimal-codomain-substitution}
+Let $\ctx$, $\ctxvar$ and $\ctxvarvar$ be contexts, $\ctx$ and $\ctxvar$ valid (but $\ctxvarvar$ not necessarily so), such that $\ctx \subseteq \ctxvarvar$.
+Let $\sub$ be a substitution for which $\subHasCtx{\ctxvarvar}{\sub}{\ctxvar}$ (by $\E$).
+Then there exists $\ctx'$ with $\dom{\ctx} \cap \dom{\ctx'} = \emptyset$ such that $(\ctx, \ctx')$ is valid, $(\ctx, \ctx') \subseteq \ctxvarvar$ and $\subHasCtx{(\ctx, \ctx')}{\sub}{\ctxvar}$ (by some $\E'$).
+\end{lemma}
+
+\begin{proof}
+By induction on $\E$.
+
+\begin{itemize}
+	\item Case \rulename{S-Nil} \\
+  We have
+  %
+  \begin{prooftree}
+    \leftl{$\E =$}
+    \ax{\subHasCtx{\ctxvarvar}{\emptysub}{\nil}}
+  \end{prooftree}
+  %
+  So $\sub = \emptysub$ and $\ctxvar = \nil$.
+  Taking $\ctx' = \nil$, we clearly have the required $\subHasCtx{(\ctx, \nil)}{\emptysub}{\nil}$ by rule \rulename{S-Nil}.
+  
+  \item Case \rulename{S-Cons} \\
+  We have
+  %
+  \begin{prooftree}
+    \prem{\E_1}{\subHasCtx{\ctxvarvar}{\sub'}{\ctxvar'}}
+    \prem{\T}{\hasType{\ctxvarvar}{M}{P[\sub']}}
+    \leftl{$\E =$}
+    \binf{\subHasCtx{\ctxvarvar}{(\sub', \for{M}{x})}{(\ctxvar', \typing{x}{P})}}
+  \end{prooftree}
+  %
+  So $\sub = (\sub', \for{M}{x})$ and $\ctxvar = (\ctxvar', \typing{x}{P})$.
+  
+  By the IH on $\E_1$ with $\ctx$, we get $\E_1'$ showing $\subHasCtx{(\ctx, \ctx_1)}{\sub'}{\ctxvar'}$ for some $\ctx_1$ such that $(\ctx, \ctx_1)$ is valid and $(\ctx, \ctx_1) \subseteq \ctxvarvar$.
+  
+  Note that we have $\isType{\ctxvar'}{P}$, and so $\hasType{\ctxvar'}{P}{\type}$ (say by $\K$), by validity of $\ctxvar$.
+  And by Lemma~\ref{lem:substitutions-preserve-validity} on $\E_1'$ and $\K$, we get $\hasType{(\ctx, \ctx_1)}{P[\sub']}{\type}$ and so $\isType{(\ctx, \ctx_1)}{P[\sub']}$.
+  Then by Lemma~\ref{lem:minimal-codomain-object} on $\T$ with $(\ctx, \ctx_1)$, we get $\T'$ showing $\hasType{(\ctx, \ctx_1, \ctx_2)}{M}{P[\sub']}$ for some $\ctx_2$ such that $(\ctx, \ctx_1, \ctx_2)$ is valid and $(\ctx, \ctx_1, \ctx_2) \subseteq \ctxvarvar$.
+  
+  Now take $\ctx' = (\ctx_1, \ctx_2)$, and weaken $\E_1'$ to show $\subHasCtx{(\ctx, \ctx_1, \ctx_2)}{\sub'}{\ctxvar'}$.
+  Using $\E_1'$ and $\T'$, we can then construct the required derivation of $\subHasCtx{(\ctx, \ctx_1, \ctx_2)}{(\sub', \for{M}{x})}{(\ctxvar', \typing{x}{P})}$ by rule \rulename{S-Cons}.
+\end{itemize}
+%
+\end{proof}
+
+\begin{lemma}
+\label{lem:minimal-codomain}
+Let $\ctxvar$ be a valid context, $\sub$ a substitution.
+If $\sub$ matches $\ctxvar$, then there exists a valid $\ctx$ such that $\subHasCtx{\ctx}{\sub}{\ctxvar}$.
+Moreover, for any $\ctx'$ satisfying $\subHasCtx{\ctx'}{\sub}{\ctxvar}$, we have $\ctx \subseteq \ctx'$.
+\end{lemma}
+
+\begin{proof}
+Since $\sub$ matches $\ctxvar$, we have $\subHasCtx{\ctx'}{\sub}{\ctxvar}$ (say by $\E$) for some $\ctx'$.
+By Lemma~\ref{lem:minimal-codomain-substitution} on $\E$ with $\nil$, we get a valid $\ctx$ such that $\subHasCtx{\ctx}{\sub}{\ctxvar}$.
+We also get that $\ctx \subseteq \ctx'$, and this is sufficient since $\ctx'$ was arbitrary.
+\end{proof}
+
+Clearly, given matching $\sub$ and $\ctxvar$, a valid context $\ctx$ of Lemma~\ref{lem:minimal-codomain} is unique up to ordering.
+% The proofs of Lemma~\ref{lem:canon-codomain-object} and \ref{lem:canon-codomain-substitution}, however, together describe an algorithm for constructing a context with a specific order.
+% The variables in $\dom{\ctx}$ are ordered by their (first) occurrences in the sequence of objects $(M_1, \ldots, M_n)$, for $\sub = (\for{M_1}{x_1}, \ldots, \for{M_n}{x_n})$.
+% We call this unique context $\ctx$ the \emph{canonical codomain} of $\sub$.
+We call such a context a \emph{minimal codomain} of $\sub$.
+% should probably be a definition
+
+Finally, we define composition of concrete substitutions, denoted by $\circ$ in order to distinguish it from composition of abstract substitutions, inductively:
+\begin{align*}
+\comp{\emptysub}{\subvar} &\mdefi \emptysub \\
+\comp{(\sub, \for{M}{x})}{\subvar} &\mdefi (\comp{\sub}{\subvar}, \for{M[\subvar]}{x})
+\end{align*}
+
+This definition is slightly confusing when considered in relation to composition of abstract substitution; note, in general, $[\comp{\emptysub}{\subvar}] = [\emptysub] \neq [\subvar] = [\emptysub][\subvar]$.
+%We will, however, only compose concrete substitutions for which the two notions of composition coincide, i.e. for which $[\comp{\sub}{\subvar}] = [\sub][\subvar]$.
+% that is not quite correct, but perhaps we will only use it for terms T where T[\comp{\sub}{\subvar}] = T[\sub][\subvar]. note that instead.
+% or perhaps we should require that dom([sub][subvar]) = dom([sub]). in that case, it might hold in general.
+
+\begin{lemma}[Composition of concrete substitutions]
+\label{lem:composition-concrete-substitutions}
+Let $\sub$ and $\subvar$ be substitutions, $\ctx$, $\ctx'$ and $\ctx''$ contexts, the former two valid.
+If $\subHasCtx{\ctx'}{\sub}{\ctx}$ (by $\E$) and $\subHasCtx{\ctx''}{\subvar}{\ctx'}$ (by $\E'$), then $\subHasCtx{\ctx''}{\comp{\sub}{\subvar}}{\ctx}$ (by some $\E''$).
+\end{lemma}
+
+\begin{proof}
+Omitted for now.
+\end{proof}
+
+%%% end

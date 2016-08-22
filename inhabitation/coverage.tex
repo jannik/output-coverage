@@ -2,50 +2,153 @@
 
 \section*{Coverage}
 
-A \textit{(coverage) goal} or \textit{pattern} is a term (object or type) $U$ containing free variables such that $\hasKind{\ctx}{U}{V}$.
-It represents the collection of ground terms given by instantiating the variables in $\ctx$.
-% More formally, a pattern is triple $\tup{\ctx, U, V}$ such that $\hasKind{\ctx}{U}{V}$, but ...
+\begin{definition}[Coverage goal]
+\label{def:coverage-goal}
+A \emph{(coverage) goal} or \emph{pattern} is a triple $\goal{\ctx}{U}{V}$ containing a valid context $\ctx$ and terms $U$ and $V$ such that $\hasKind{\ctx}{U}{V}$.
+(Note that, in our limited LF type theory, $V$ is uniquely determined given $\ctx$ and $U$.)
+% do I need to argue this after presenting the type theory?
+\end{definition}
 
-We say a coverage goal $\hasKind{\ctx}{U}{V}$ is \textit{immediately covered} by a pattern $\hasKind{\ctx'}{U'}{V'}$ if there exists a substitution $\subHasCtx{\ctx}{\sub}{\ctx'}$ such that $\defeq{U}{\subst{U'}{\sub}}$ and $\defeq{V}{\subst{V'}{\sub}}$.
+A goal $\goal{\ctx}{U}{V}$ represents the collection of ground terms given by instantiating the variables in $\ctx$, i.e. the terms $U[\sub]$ for substitutions $\sub$ satisfying $\subHasCtx{\nil}{\sub}{\ctx}$.
+Note that this collection of terms may be empty.
+
+\begin{definition}[Immediate coverage]
+\label{def:immediate-coverage}
+A coverage goal $\goal{\ctx}{U}{V}$ is \emph{immediately covered} by a pattern $\goal{\ctx'}{U'}{V'}$ if there exists a substitution $\sub$ with $\subHasCtx{\ctx}{\sub}{\ctx'}$ such that $U = U'[\sub]$ and $V = V'[\sub]$.
 It is immediately covered by a finite set of patterns if it is immediately covered by a member of the set.
+\end{definition}
 
-A goal $\hasKind{\ctx}{U}{V}$ is then \textit{covered} by a set of patterns $\P$ if, for all substitutions $\subHasCtx{\nil}{\sub}{\ctx}$, the goal $\hasKind{\nil}{\subst{U}{\sub}}{\subst{V}{\sub}}$ is immediately covered by $\P$.
+\begin{definition}[Coverage]
+\label{def:coverage}
+A coverage goal $\goal{\ctx}{U}{V}$ is \emph{covered} by a set of patterns $\P$ if, for all substitutions $\sub$ with $\subHasCtx{\nil}{\sub}{\ctx}$, the goal $\goal{\nil}{U[\sub]}{V[\sub]}$ is immediately covered by $\P$.
+(Note that, by Lemma~\ref{lem:substitutions-preserve-validity}, $\goal{\nil}{U[\sub]}{V[\sub]}$ is indeed a goal.)
 That is, a goal is covered if every ground instance of the goal is immediately covered.
+\end{definition}
+
+%\begin{definition}[Splitting]
+%\label{def:splitting}
+%%
+%Let $\ctx = (\ctx_1, \typing{x}{P_x}, \ctx_2)$ be a valid context.
+%The set of $x$-\emph{splitting substitutions} of $\ctx$, denoted $\S^{\ctx}_x$, is the set of triples
+%\begin{align*}
+%%
+%\set{ \triple{\ctx'}{\sub}{(\ctx, \ctx_c)} \;\|\;
+  %& (\typing{c}{\pi{\ctx_c}{P_c}}) \in \sig, \\
+  %& \dom{\ctx} \cap \dom{\ctx_c} = \emptyset, \\
+  %& \textnormal{$\sub$ a substitution matching $(\ctx, \ctx_c)$}, \\ % \textnormal instead of \text because we are inside a definition
+  %& \textnormal{$\ctx'$ the canonical codomain of $\sub$}, \\
+  %& [\sub] \in \mgu{\ueqn{P_x}{P_c}, \ueqn{x}{\app{c}{\ctx_c}}, \nil}
+%}
+%\end{align*}
+%%
+%(The requirement that the context domains are disjoint is meant as an assumption; if in fact the domain of some $\ctx_c$ intersects nontrivially with $\dom{\ctx}$, first rename the bound variables in $\pi{\ctx_c}{P_c}$ to avoid this.
+%Hence $(\ctx, \ctx_c)$ is valid.)
+%
+%Now suppose $\goal{\ctx}{U}{V}$ is a goal.
+%The \emph{split} of $\goal{\ctx}{U}{V}$ on $x$ is the set of goals $\set{\goal{\ctx''}{U[\sub]}{V[\sub]} \| \triple{\ctx''}{\sub}{(\ctx, \ctx')} \in \S^{\ctx}_x}$
+%%
+%\end{definition}
+
+\begin{definition}[Splitting]
+\label{def:splitting}
+Let $\ctx = (\ctx_1, \typing{x}{P_x}, \ctx_2)$ be a valid context.
+The set of $x$-\emph{splitting substitutions} of $\ctx$, denoted $\S^{\ctx}_x$, is the set of triples given by
+%
+\begin{itemize}
+	\item For every $(\typing{c}{\pi{\ctx_c}{P_c}}) \in \sig$, where $\U = (\ueqn{P_x}{P_c}, \ueqn{x}{\app{c}{\ctx_c}}, \nil)$ has a solution and $\dom{\ctx} \cap \dom{\ctx_c} = \emptyset$:
+  \begin{itemize}
+    \item[$\bullet$] Let $\sub$ be a substitution matching $(\ctx, \ctx_c)$ with $[\sub] \in \mgu{\U}$ (exists by Lemma~\ref{lem:unification-existence}).
+    % I either need to argue here that the unification problem is well-typed (the lemma above requires it) or:
+    % Find mgu of (\ueqn{P_x}{P_c}) and add to it \for{\app{c}{\ctx_c}}{x}, arguing that it remains an mgu -- which is doable!
+    \item[$\bullet$] Let $\ctx'$ be a minimal codomain of $\sub$ (exists by Lemma~\ref{lem:minimal-codomain}).
+    \item[$\bullet$] Then $\triple{\ctx'}{\sub}{\ctx_c} \in \S^{\ctx}_x$.
+  \end{itemize}
+\end{itemize}
+%
+(The requirement that the context domains are disjoint is meant as an assumption; if in fact the domain of some $\ctx_c$ intersects nontrivially with $\dom{\ctx}$, first rename the bound variables in $\pi{\ctx_c}{P_c}$ to avoid this.
+Hence $(\ctx, \ctx_c)$ is valid.)
+
+Now suppose $\goal{\ctx}{U}{V}$ is a goal.
+The \emph{split} of $\goal{\ctx}{U}{V}$ on $x$ is the set of goals $\set{\goal{\ctx''}{U[\sub]}{V[\sub]} \| \triple{\ctx''}{\sub}{\ctx'} \in \S^{\ctx}_x}$
+\end{definition}
+
+Note that $\triple{\ctx''}{\sub}{\ctx'} \in \S^{\ctx}_x$ implies $\subHasCtx{\ctx''}{\sub}{(\ctx, \ctx')}$.
+So by Lemma~\ref{lem:substitutions-preserve-validity}, the split of $\goal{\ctx}{U}{V}$ on $x$ is indeed a set of goals.
+% besides the lemma, we need some weakening to argue this!
+Further, it is a finite set because $ \S^{\ctx}_x$ is -- in turn because $\sig$ is.
+
+\begin{definition}[Complete set of substitutions]
+\label{def:complete-substitutions}
+Let $\ctx$ be a valid context and $\S = \set{\triple{\ctx_i'}{\sub_i}{\ctx_i} \| i = 1, \ldots, n}$ a set of triples such that $\subHasCtx{\ctx''}{\sub}{(\ctx, \ctx')}$ for each $\triple{\ctx''}{\sub}{\ctx'} \in \S$.
+$\S$ is \emph{complete} for $\ctx$ if, for all substitutions $\subvar$ with $\subHasCtx{\nil}{\subvar}{\ctx}$, there is some $\triple{\ctx''}{\sub}{\ctx'} \in \S$ for which there exists $\sub'$ with $\subHasCtx{\nil}{\sub'}{\ctx''}$ such that $\restr{[\sub \circ \sub']}{\dom{\ctx}} = [\subvar]$.
+That is, the set of ground terms represented by a goal $\goal{\ctx}{U}{V}$ is a subset of the set of ground terms represented by the goals $\set{\goal{\ctx''}{U[\sub]}{V[\sub]} \| \triple{\ctx''}{\sub}{\ctx'} \in \S}$.
+\end{definition}
+
+% define also non-redundant and prove that! it helps with semi-completeness of coverage checking. and is easy.
 
 \begin{theorem}[Conservativity of coverage]
-Let $\hasKind{\ctx}{U}{V}$ be a coverage goal, $\S = \set{\subHasCtx{\ctx_i}{\sub_i}{\ctx} \;\;|\;\; i = 1, ..., n}$ a non-redundant, complete set of substitutions, and $\P$ a set of patterns.
-Then $\hasKind{\ctx}{U}{V}$ is covered by $\P$ if and only if all members of $\set{\hasKind{\ctx_i}{\subst{U}{\sub_i}}{\subst{V}{\sub_i}} \;\;|\;\; i = 1, ..., n}$ are covered by $\P$.
+\label{thm:conservativity-coverage}
+Let $\goal{\ctx}{U}{V}$ be a coverage goal, $\S$ a complete set of substitutions for $\ctx$, and $\P$ a set of patterns.
+Then $\goal{\ctx}{U}{V}$ is covered by $\P$ if all members of $\set{\goal{\ctx''}{U[\sub]}{V[\sub]} \| \triple{\ctx''}{\sub}{\ctx'} \in \S}$ are covered by $\P$.
+[``Only if'' is coming once I reintroduce non-redundancy.] % is that right, though? think it through at some point.
 \end{theorem}
 
 \begin{proof}
 Coverage depends only on the set of ground instances of the goal.
-But since $\S$ is complete, the set of ground instances of $\hasKind{\ctx}{U}{V}$ is exactly the same as the union of the sets of ground instances of $\hasKind{\ctx_i}{\subst{U}{\sub_i}}{\subst{V}{\sub_i}}$ for each $i$.
+But since $\S$ is complete for $\ctx$, the set of ground instances of $\goal{\ctx}{U}{V}$ is a subset of the union of the sets of ground instances of $\goal{\ctx''}{U[\sub]}{V[\sub]}$ for each $\triple{\ctx''}{\sub}{\ctx'} \in \S$.
 \end{proof}
 
-Given a goal $\hasKind{\ctx}{U}{V}$ with $\ctx = (\ctx_1, \typing{x}{P_x}, \ctx_2)$, we can \textit{split} it on the variable $x$ to yield the following set of \textit{splitting} substitutions:
-\begin{align*}
-\set{
-  \subHasCtx{\ctx'}{\sub}{\ctx} \;\;|\;\; & (\typing{c}{\pi{\ctx_c}{P_c}}) \in \sig, \\ % consider doing \sub_|_{\ctx}, i.e. sub restricted to ctx
-  & \sub \; \text{is a mgu of} \; \set{P_x \approx P_c, x \approx \app{c}{\ctx_c}}, \\
-  & \subHasCtx{\ctx'}{\sub}{(\ctx, \ctx_c)}
-}
-\end{align*}
-
-Crucially, a goal $\hasKind{\ctx}{U}{V}$ and the set of goals $\set{\hasKind{\ctx_i}{\subst{U}{\sub_i}}{\subst{V}{\sub_i}} \;\;|\;\; i = 1, ..., n}$, given by applying a splitting set $\set{\subHasCtx{\ctx_i}{\sub_i}{\ctx} \;\;|\;\; i = 1, ..., n}$ to the goal, represent the same set of ground terms.
-This is an immediate corollary of the following theorem.
-
-\begin{theorem}[Splitting is non-redundant and complete]
-\label{thm:splitting-props}
-The set of substitutions generated by splitting is non-redundant and complete.
+\begin{theorem}[Splitting is complete]
+\label{thm:splitting-complete}
+Let $\ctx = (\ctx_1, \typing{x}{P_x}, \ctx_2)$ be a valid context.
+Then $\S^{\ctx}_x$, the set of $x$-splitting substitutions of $\ctx$, is complete for $\ctx$.
 \end{theorem}
 
 \begin{proof}
-Suppose $\S$ is the result of splitting $\hasKind{(\ctx_1, \typing{x}{P_x}, \ctx_2)}{U}{V}$ on $x$.
+%By definition of splitting, each $\sub \in \S$ in particular maps $x$ to a term with a unique head constant.
+%Hence $\S$ is non-redundant.
+Suppose we have some $\subvar$ with $\subHasCtx{\nil}{\subvar}{\ctx}$ (by $\E_{\subvar}$).
+We must show that there is some $\triple{\ctx''}{\sub}{\ctx'} \in \S^{\ctx}_x$ for which there exists $\sub'$ with $\subHasCtx{\nil}{\sub'}{\ctx''}$ such that $\restr{[\sub \circ \sub']}{\dom{\ctx}} = [\subvar]$.
 
-By definition of splitting, each $\sub \in \S$ in particular maps $x$ to a term with a unique head constant.
-Hence $\S$ is non-redundant.
+Since $x \in \dom{\ctx}$, $\E_{\subvar}$ must contain
+%
+\begin{prooftree}
+\ninf{\subHasCtx{\nil}{\subvar_1}{\ctx_1}}
+\prem{\T_x}{\hasType{\nil}{M}{P_x[\subvar_1]}}
+\binf{\subHasCtx{\nil}{(\subvar_1, \for{M}{x})}{(\ctx_1, \typing{x}{P_x})}}
+\end{prooftree}
+%
+We must have $\FV{P_x} \subseteq \dom{\ctx_1}$ and so $P_x[\subvar_1] = P_x[\subvar]$.
+Since $M$ is well-typed in the empty context, we have $\FV{M} = \emptyset$ and so $M = c \; M_1 \; \ldots \; M_n$ for some $c$ and $M_1, \ldots, M_n$.
+Hence $\T_x$ must have the form
+%
+\begin{prooftree}
+\ninf{$(\typing{c}{\pi{\ctx_c}{P_c}}) \in \sig$}
+\noLine
+\uinf{$\vdots$}
+\noLine
+\uinf{\hasType{\nil}{c \; M_1 \; \ldots \; M_n}{P_c[\for{M_1}{x_1}] \ldots [\for{M_n}{x_n}]}}
+\end{prooftree}
+%
+(where $\ctx_c = (\nil, \typing{x_1}{P_1}, \ldots, \typing{x_n}{P_n})$); we have $P_x[\subvar] = P_c[\for{M_1}{x_1}] \ldots [\for{M_n}{x_n}]$.
+We can also establish $\subHasCtx{\nil}{(\nil, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})}{\ctx_c}$ from subderivations of $\T_x$.
 
-By [clever argument, using properties of most general unifiers], $\S$ is also complete.
+Since $\dom{[\subvar]} \cap \dom{[\nil, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n}]} = \emptyset$, the concatenation $\subvar' \mdefi (\subvar, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})$ satisfies $\subHasCtx{\nil}{\subvar'}{(\ctx, \ctx_c)}$ (by $\E_{\subvar}'$).
+% this probably deserves a supporting argument, a concatenation lemma in the section on well-typed substitutions
+And $[\subvar']$ unifies both $\ueqn{P_x}{P_c}$ and $\ueqn{x}{\app{c}{\ctx_c}}$.
+
+Now let $\U = (\ueqn{P_x}{P_c}, \ueqn{x}{\app{c}{\ctx_c}}, \nil)$, which has a solution (namely $[\subvar']$).
+But then, by definition of splitting, we have some $\triple{\ctx'}{\sub}{\ctx_c} \in \S^{\ctx}_x$ with $\subHasCtx{(\ctx'}{\sub}{(\ctx, \ctx_c)}$ (by $\E_{\sub}$) such that $[\sub] \in \mgu{\U}$ and where $\ctx'$ is a minimal codomain of $\sub$.
+%Then by Lemma~\ref{lem:unification-existence}, there exists $\sub$ with $\subHasCtx{(\ctx, \ctx_c)[\sub] \setminus \dom{[\sub]}}{\sub}{(\ctx, \ctx_c)}$ (by $\E_{\sub}$) such that $[\sub] \in \mgu{\U}$
+
+Recall that $[\subvar']$ is a unifier of the elements of $\U$.
+Then by Lemma~\ref{lem:unification-mgu} on $\E_{\sub}$ and $\E_{\subvar}'$, there exists $\sub'$ such that $\subHasCtx{\nil}{\sub'}{\ctx'}$ and $[\subvar'] = [\sub][\sub']$.
+% and somehow, in this case, [\subvar'] = [\sub][\sub'] implies [\subvar'] = [\sub \circ \sub']
+Hence, in particular, $[\subvar] = \restr{[\subvar']}{\dom{\ctx}} = \restr{[\sub \circ \sub']}{\dom{\ctx}}$ as required.
 \end{proof}
 
-Hence a coverage goal is covered by a set of patterns if and only if the goals resulting from splitting the goal (on any variable) are all covered.
+So by Theorem~\ref{thm:splitting-complete} and \ref{thm:conservativity-coverage} together, we have the following:
+A goal $\goal{\ctx}{U}{V}$ is covered by a set of patterns if the split of $\goal{\ctx}{U}{V}$ on $x$, for any $x \in \dom{\ctx}$, is covered.
+% and only if
+
+%%% end
