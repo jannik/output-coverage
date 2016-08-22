@@ -1,0 +1,238 @@
+\documentclass[12pt]{article}
+
+\usepackage[english]{babel}
+\usepackage[T1]{fontenc}
+\usepackage[latin1]{inputenc}
+\usepackage[pdftex]{graphicx}
+
+\usepackage{fancyvrb} % for BVerbatim
+
+\usepackage{amsmath, amssymb}
+\usepackage{mathtools} % for Coloneqq
+
+\usepackage{bussproofs}
+
+\newcommand{\ensurecommand}[1]{\providecommand{#1}{}\renewcommand{#1}}
+
+\ensurecommand{\defi}{\Coloneqq}
+\ensurecommand{\alt}{\;\; | \;\;}
+\ensurecommand{\eval}[2]{\ensuremath{#1 \downarrow #2}}
+\ensurecommand{\step}[2]{\ensuremath{#1 \overset{\neg}{\rightarrow} #2}}
+
+\ensurecommand{\true}{\mathtt{true}}
+\ensurecommand{\false}{\mathtt{false}}
+
+\ensurecommand{\ninf}[1]{\AxiomC{#1}}
+\ensurecommand{\uinf}[1]{\UnaryInfC{#1}}
+\ensurecommand{\binf}[1]{\BinaryInfC{#1}}
+\ensurecommand{\ax}[1]{\ninf{} \uinf{#1}}
+\ensurecommand{\leftl}[1]{\LeftLabel{#1 \;}}
+\ensurecommand{\rulename}{\textsc}
+
+\begin{document}
+
+\title{Synopsis: Output Coverage in Twelf}
+\author{Jannik Gram}
+\date{August 19, 2016}
+
+\maketitle
+
+\section*{Background}
+
+In logic programming, (partial) functions are expressed simply as relations that are well-moded, i.e. with input and output variables specified.
+A well-moded relation is total, and so defines a total function, if for all possible input values there exist output values to satisfy the relation.
+In constructive logic, a theorem of the form $\forall x{:}S . \, \exists y{:}T . \, p(x, y)$ corresponds to a total function mapping inputs of type $S$ to outputs of type $T$ --- producing for any $x$ a witness $y$ such that $p(x, y)$.
+Hence it is important to be able to verify totality of well-moded relations in logic languages, and this is what e.g. the Twelf system~\cite{PfenningSchurmann99} is designed to do.
+
+Theorem checking is the main motivation, but let us illustrate the problem with a simpler example.
+As part of the abstract syntax of a programming language, it is common to have truth values $t$ and boolean expressions $b$:
+\begin{align*}
+  t &\defi \true \alt \false \\
+  b &\defi t \alt \neg{b} \alt \cdots
+\end{align*}
+And the following evaluation judgement gives a natural semantics to such boolean expressions:
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\eval{b}{t}}
+
+\begin{prooftree}
+  \leftl{\rulename{E-Const} :}
+  \ax{\eval{t}{t}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\eval{b}{\true}}
+  \leftl{\rulename{E-NegT} :}
+  \uinf{\eval{\neg{b}}{\false}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\eval{b}{\false}}
+  \leftl{\rulename{E-NegF} :}
+  \uinf{\eval{\neg{b}}{\true}}
+\end{prooftree}
+
+\centering{$\vdots$}
+
+\vspace{0.5cm}
+}
+
+This relation (as far as it is specified) is a function, viewing $b$ as input and $t$ as output.
+And it is clearly a total function, i.e. any expression $b$ evaluates to some value $t$.
+If we omit one of the rules for negation, however, the function is no longer total;
+the premise of the remaining rule requires that $b$ evaluates to a specific truth value, but that is by no means a certainty.
+
+The judgement can be formalised as a logic programming signature as follows (using Twelf syntax):
+\begin{center}
+\begin{BVerbatim}
+eval : exp -> val -> type.
+%mode eval +B -T.
+
+eval/const : eval (const T) T.
+
+eval/neg-t : eval (neg B) false
+              <- eval B true.
+
+eval/neg-f : eval (neg B) true
+              <- eval B false.
+\end{BVerbatim}
+\end{center}
+Omitting the \texttt{eval/neg-f} rule, say, the output of the subgoal in \texttt{eval/neg-t} is not necessarily covered by any rules.
+This introduces the notion of \textit{output coverage}~\cite{OutputCoverage}.
+
+\section*{Problem}
+
+Having formalised the relation as above, we might then like the Twelf system to be able to verify that it defines a total function.
+
+Twelf's totality checker~\cite[ch. 9.3]{TwelfUserGuide} first checks that the function must terminate, i.e. it verifies that for all recursive calls the input argument is strictly smaller --- according to some well-ordering on terms of the relevant type.
+And indeed, \texttt{B} is smaller than \texttt{neg B} under the natural subterm relation on \texttt{exp}.
+It then checks input coverage~\cite{SchurmannPfenning03}; there must be at least one clause for each possible form the input argument of type \texttt{exp} can take.
+This check also succeeds, even with only one of the rules for negation.
+
+However, as the final part of its totality checker Twelf checks output coverage --- and it does so for each rule in isolation.
+This way it correctly identifies that the version with just a single of the two rules for negation does not define a total function.
+On the other hand, it fails to identify that \rulename{E-NegT} and \rulename{E-NegF} together make the function total.
+
+The typical way around this problem in Twelf is to turn an output-coverage checking problem into an input-coverage checking problem.
+That is, we essentially have to write a single general \rulename{E-Neg} rule that then uses an auxiliary negation judgement:
+
+\begin{prooftree}
+  \ninf{\eval{b}{t}}
+  \ninf{\step{t}{t'}}
+  \leftl{\rulename{E-Neg} :}
+  \binf{\eval{\neg{b}}{t'}}
+\end{prooftree}
+
+{ % judgement
+\vspace{0.5cm}
+\noindent \framebox{\step{t}{t'}}
+
+\begin{prooftree}
+  \leftl{\rulename{N-True} :}
+  \ax{\step{\true}{\false}}
+\end{prooftree}
+
+\begin{prooftree}
+  \leftl{\rulename{N-False} :}
+  \ax{\step{\false}{\true}}
+\end{prooftree}
+
+\vspace{0.5cm}
+}
+
+This transformation is referred to as \textit{output factoring}~\cite{OutputFactoring}.
+The new version of the evaluation relation is clearly total because the negation relation is, and in fact Twelf is now able to verify this.
+However, it is longer (including the additional judgement) and less readable, and the transformation has required extra work.
+The problem is particularly present when proving meta-theorems about deductive systems and using totality checking as proof checking, which is after all what Twelf is most often used for.
+
+A similar problem occurs when trying to rule out a contradictory case in a proof.
+In order for Twelf to recognise that the case is vacuously covered, we must employ a lemma and use input coverage checking in place of the output coverage checking.
+
+As an example, we can try to prove that evaluation is deterministic, i.e. \textit{if $\eval{b}{t}$ and $\eval{b}{t'}$ then $t = t'$}, by induction on the first evaluation derivation.
+If one derivation ends in \rulename{E-NegT} and the other in \rulename{E-NegF}, by the induction hypothesis we get the contradiction $\true = \false$, and so the case is impossible.
+Representing equality of truth values as a type family in Twelf, the contradiction is represented by having an inhabitant of an empty equality type.
+But the output coverage checker does not notice this, and so we have to refer to a specialised lemma (with zero clauses!) that uses the contradiction to produce whatever we need for the proof case.
+
+\section*{Project Goals}
+
+The overall goal of this project is to investigate --- and develop solutions for --- the problems related to output coverage checking in the following settings:
+
+\begin{itemize}
+	\item For pure Prolog.
+  \item For a larger subset of Twelf, in particular the dependently typed Horn fragment.
+\end{itemize}
+
+As mentioned, output coverage checking is a part of the larger machinery of totality checking --- as well as mode, worlds and uniqueness checking.
+In analysing output coverage, it may well prove relevant to involve some of these other analyses.
+For instance, it is unclear how a contradictory case, which is recognised as such by an output coverage analysis and so left unfinished in some sense, will then be accepted by the mode checker.
+It is therefore natural to reconsider the dependencies of these different checking procedures.
+
+A system that solves the output-coverage checking problems may take different forms.
+One approach is to identify common patterns where e.g. factorisation might be needed, blindly factorise in all matching cases as a preprocessing step, and then hand over the resulting, longer program to Twelf's existing totality checker.
+It is unclear whether this is feasible as a general solution.
+
+Another, more satisfying approach is to perform the output coverage analysis outside of Twelf.
+The system should then be able to verify that the original evaluation relation is total (and deterministic).
+And since it should be trustworthy, it is necessary to argue at least for soundness.
+
+\newpage %
+
+\section*{Project Status}
+
+I have developed a system that replicates most of Twelf's totality checking, for a restricted language with dependent types, and extends output coverage checking such that (some) contradictory cases are recognised and output factoring is not necessary.
+A prototype of this system has been implemented as a Haskell program.
+
+Mainly, it remains to formalise and prove correct at least part of this system.
+I have laid the foundation for this by formalising and proving necessary lemmas about ``splitting'' in the first-order dependently typed fragment --- an operation crucial to both input- and output-coverage checking.
+
+The remaining 3 months, counting from the previous deadline of August 8, should roughly comprise the following work:
+\begin{itemize}
+	\item Finish up formalisation of splitting and related concepts (2 weeks).
+  \item Formalise the totality checking system, and partly prove its correctness (4 weeks).
+  \item Implement the formalised system, in part based on prototype implementation (2 weeks).
+  \item Write a report (4 weeks).
+\end{itemize}
+
+\section*{Learning Objectives}
+
+\begin{itemize}
+	\item Survey and summarise relevant techniques for analysing logic programs in relation to totality and mode checking.
+  \item Analyse shortcomings of the current state of coverage checking in Twelf and similar languages, and consider alternative approaches.
+  \item Design a deductive system (or algorithm) that facilitates improved coverage checking, and prove relevant properties about the system, e.g. soundness.
+  \item Implement this system as proof-of-concept, possibly integrated with Twelf, and evaluate it as a solution to the specified problem.
+\end{itemize}
+
+\begin{thebibliography}{9}
+
+\bibitem{PfenningSchurmann99}
+Frank Pfenning, Carsten Sch\"{u}rmann.
+\textit{System Description: Twelf --- A Meta-Logical Framework for Deductive Systems}.
+In \textit{Proceedings of the 16th International Conference on Automated Deduction}, pages 202-206, 1999.
+
+\bibitem{OutputCoverage}
+Twelf Home Page.
+\textit{Coverage checking}.
+Available at \\
+\verb|http://twelf.org/w/index.php?title=Coverage_checking&oldid=6507|
+
+\bibitem{TwelfUserGuide}
+Frank Pfenning, Carsten Sch\"{u}rmann.
+\textit{Twelf User's Guide, Version 1.4}.
+Available at \\
+\verb|http://twelf.org/w/index.php?title=User%27s_Guide&oldid=4534|
+
+\bibitem{SchurmannPfenning03}
+Carsten Sch\"{u}rmann, Frank Pfenning.
+\textit{A Coverage Checking Algorithm for LF}.
+In \textit{Proceedings of the Theorem Proving in Higher Order Logics 16th International Conference}, pages 120-135, 2003.
+
+\bibitem{OutputFactoring}
+Twelf Home Page.
+\textit{Output factoring}.
+Available at \\
+\verb|http://www.twelf.org/w/index.php?title=Output_factoring&oldid=6190|
+
+\end{thebibliography}
+
+\end{document}
