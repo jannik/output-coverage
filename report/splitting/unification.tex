@@ -35,7 +35,7 @@ For a unification problem $\U$, we say that $\abssub$ is a \emph{solution} of $\
 \end{definition}
 
 Given a unification problem $\U$, we let $\mgu{\U}$ denote the (potentially empty) set of most general unifiers $\abssub$ that are idempotent, i.e. $\abssub \abssub = \abssub$, and
-satisfy $\dom{\abssub} \cup \vran{\abssub} \subseteq \FV{\U}$. Note that idempotence implies $\dom{\abssub} \cap \vran{\abssub} = \emptyset$.
+satisfy $\supp{\abssub} \cup \vran{\abssub} \subseteq \FV{\U}$. Note that idempotence implies $\supp{\abssub} \cap \vran{\abssub} = \emptyset$.
 % maybe subseteq should really be eq
 % mention something about the properties of the first-order case, e.g. all mgus are instances of each other, my defined mgu set is finite..
 
@@ -87,9 +87,9 @@ We now define a transition relation $\Longrightarrow$ on unification states, whi
 \label{lem:unification-properties}
 If $\usteps{\tup{\U \| \emptyset}}{\tup{\nil \| \abssub}}$, then
 \begin{itemize}
-  \item $\abssub$ satisfies $\dom{\abssub} \cup \vran{\abssub} \subseteq \FV{\U}$
+  \item $\abssub$ satisfies $\supp{\abssub} \cup \vran{\abssub} \subseteq \FV{\U}$
   % in fact, eq instead of subseteq, but I only need subseteq
-	\item $\abssub$ is idempotent, and so $\dom{\abssub} \cap \vran{\abssub} = \emptyset$
+	\item $\abssub$ is idempotent, and so $\supp{\abssub} \cap \vran{\abssub} = \emptyset$
 \end{itemize}
 \end{lemma}
 
@@ -216,7 +216,7 @@ By case analysis on $\E$; the only interesting cases are \rulename{Decomp} and \
 
 \begin{lemma}
 \label{lem:unification-existence}
-If a unification problem $\U$ well-typed in $\ctx$ has a solution, then there exists $\sub$ with $\subHasCtx{\ctx[\sub] \setminus \dom{[\sub]}}{\sub}{\ctx}$ such that $[\sub] \in \mgu{\U}$.
+If a unification problem $\U$ well-typed in $\ctx$ has a solution, then there exists $\sub$ with $\subHasCtx{\ctx[\sub] \setminus \supp{[\sub]}}{\sub}{\ctx}$ such that $[\sub] \in \mgu{\U}$.
 \end{lemma}
 
 \begin{proof}
@@ -226,12 +226,12 @@ Then we know that $\usteps{\tup{\U \| \emptyset}}{\tup{\nil \| \abssub}}$ is der
 Since $\U$ is well-typed in $\ctx \emptyset = \ctx$, and $\idsub_{\ctx}$ satisfies $\subHasCtx{\ctx[\idsub_{\ctx}]}{\idsub_{\ctx}}{\ctx}$ and $[\idsub_{\ctx}] = \emptyset$, the two conditions of Lemma~\ref{lem:unification-invariants} are satisfied for $\tup{\U \| \emptyset}$.
 Hence, by Lemma~\ref{lem:unification-invariants}, there exists $\sub$ with $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ such that $[\sub] = \abssub$ (and so $[\sub] \in \mgu{\U}$ as required).
 
-And since we have $\dom{[\sub]} \cap \vran{[\sub]} = \emptyset$, certainly $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ implies $\subHasCtx{\ctx[\sub] \setminus \dom{[\sub]}}{\sub}{\ctx}$ (the same derivation suffices).
+And since we have $\supp{[\sub]} \cap \vran{[\sub]} = \emptyset$, certainly $\subHasCtx{\ctx[\sub]}{\sub}{\ctx}$ implies $\subHasCtx{\ctx[\sub] \setminus \supp{[\sub]}}{\sub}{\ctx}$ (the same derivation suffices).
 \end{proof}
 
 \begin{lemma}
 \label{lem:unification-mgu}
-Let $\ctx$ and $\ctxvar$ be valid contexts such that $\ctxvar \subseteq \ctx[\sub] \setminus \dom{[\sub]}$.
+Let $\ctx$ and $\ctxvar$ be valid contexts such that $\ctxvar \subseteq \ctx[\sub] \setminus \supp{[\sub]}$.
 Let $\ctx'$ be a (not necessarily valid) context, $\sub$ and $\subvar$ concrete substitutions such that $\subHasCtx{\ctxvar}{\sub}{\ctx}$ and $\subHasCtx{\ctx'}{\subvar}{\ctx}$.
 Let $\U$ be a unification problem, and suppose $[\sub] \in \mgu{\U}$ and $[\subvar]$ a unifier of the equation in $\U$.
 Then there exists a concrete substitution $\sub'$ such that $[\subvar] = [\sub][\sub']$ and $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$.
@@ -247,7 +247,7 @@ We show by structural induction on $\ctxvar$ that there exists a concrete substi
   \item Case $\ctxvar = (\ctxvar', \typing{x}{P_x[\sub]})$ \\
   By the induction hypothesis on $\ctxvar'$, there exists $\sub''$ with $\subHasCtx{\ctx'}{\sub''}{\ctxvar'}$ (by some $\E$) and $[\sub''] = \restr{\abssub}{\dom{\ctxvar'}}$.
   Now take $\sub' = (\sub'', \for{x[\subvar]}{x})$.
-  Since $x \notin \dom{[\sub]}$ (by definition of $\ctxvar$), we have $x \abssub = x [\sub] \abssub = x[\subvar]$, and so $[\sub'] = \restr{\abssub}{\dom{\ctxvar}}$ as required.
+  Since $x \notin \supp{[\sub]}$ (by definition of $\ctxvar$), we have $x \abssub = x [\sub] \abssub = x[\subvar]$, and so $[\sub'] = \restr{\abssub}{\dom{\ctxvar}}$ as required.
   
   We have $\subHasCtx{\ctx'}{\subvar}{\ctx}$ by assumption, and any derivation of this must contain a derivation $\T$ of $\hasType{\ctx'}{x[\subvar]}{P_x[\subvar]}$ (since $x \in \dom{\ctx}$).
   Finally, noting $P_x[\sub][\sub''] = P_x[\sub]\abssub = P_x[\subvar]$ (since $\FV{P_x[\sub]} \subseteq \dom{\ctxvar'}$), we construct a derivation of $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$.
@@ -260,8 +260,8 @@ We show by structural induction on $\ctxvar$ that there exists a concrete substi
   %
 \end{itemize}
 Hence there exists $\sub'$ such that $\subHasCtx{\ctx'}{\sub'}{\ctxvar}$ and $[\sub'] = \restr{\abssub}{\dom{\ctxvar}}$.
-Since $\dom{\abssub} \subseteq \dom{\ctx}$, $\sub'$ and $\abssub$ agree everywhere outside of $\dom{\ctx}$ as well.
-And since $\dom{[\sub]} \cap \vran{[\sub]} = \emptyset$, agreement is irrelevant for $\dom{[\sub]}$.
+Since $\supp{\abssub} \subseteq \dom{\ctx}$, $\sub'$ and $\abssub$ agree everywhere outside of $\dom{\ctx}$ as well.
+And since $\supp{[\sub]} \cap \vran{[\sub]} = \emptyset$, agreement is irrelevant for $\supp{[\sub]}$.
 So $[\sub][\sub'] = [\sub]\abssub = [\subvar]$.
 \end{proof}
 

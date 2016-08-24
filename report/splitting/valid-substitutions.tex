@@ -23,7 +23,7 @@ Hence we define a typing judgement for (concrete) substitutions:
 \end{judgement}
 
 Given $\ctx$ and $\sub$, we say that $\sub$ matches $\ctx$ if there exists $\ctx'$ such that $\subHasCtx{\ctx'}{\sub}{\ctx}$.
-If $\sub$ matches $\ctx$, we have in particular $\dom{[\sub]} \subseteq \dom{\ctx}$.
+If $\sub$ matches $\ctx$, we have in particular $\supp{[\sub]} \subseteq \dom{\ctx}$.
 For any valid context $\ctx$, we define $\idsub_{\ctx}$ to be the identity substitution with explicit bindings for all $x \in \dom{\ctx}$ in order.
 Then clearly $\subHasCtx{\ctx}{\idsub_{\ctx}}{\ctx}$.
 

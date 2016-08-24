@@ -133,13 +133,13 @@ Hence $\T_x$ must have the form
 (where $\ctx_c = (\nil, \typing{x_1}{P_1}, \ldots, \typing{x_n}{P_n})$); we have $P_x[\subvar] = P_c[\for{M_1}{x_1}] \ldots [\for{M_n}{x_n}]$.
 We can also establish $\subHasCtx{\nil}{(\nil, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})}{\ctx_c}$ from subderivations of $\T_x$.
 
-Since $\dom{[\subvar]} \cap \dom{[\nil, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n}]} = \emptyset$, the concatenation $\subvar' \mdefi (\subvar, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})$ satisfies $\subHasCtx{\nil}{\subvar'}{(\ctx, \ctx_c)}$ (by $\E_{\subvar}'$).
+Since $\supp{[\subvar]} \cap \supp{[\nil, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n}]} = \emptyset$, the concatenation $\subvar' \mdefi (\subvar, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})$ satisfies $\subHasCtx{\nil}{\subvar'}{(\ctx, \ctx_c)}$ (by $\E_{\subvar}'$).
 % this probably deserves a supporting argument, a concatenation lemma in the section on well-typed substitutions
 And $[\subvar']$ unifies both $\ueqn{P_x}{P_c}$ and $\ueqn{x}{\app{c}{\ctx_c}}$.
 
 Now let $\U = (\ueqn{P_x}{P_c}, \ueqn{x}{\app{c}{\ctx_c}}, \nil)$, which has a solution (namely $[\subvar']$).
 But then, by definition of splitting, we have some $\triple{\ctx'}{\sub}{\ctx_c} \in \S^{\ctx}_x$ with $\subHasCtx{(\ctx'}{\sub}{(\ctx, \ctx_c)}$ (by $\E_{\sub}$) such that $[\sub] \in \mgu{\U}$ and where $\ctx'$ is a minimal codomain of $\sub$.
-%Then by Lemma~\ref{lem:unification-existence}, there exists $\sub$ with $\subHasCtx{(\ctx, \ctx_c)[\sub] \setminus \dom{[\sub]}}{\sub}{(\ctx, \ctx_c)}$ (by $\E_{\sub}$) such that $[\sub] \in \mgu{\U}$
+%Then by Lemma~\ref{lem:unification-existence}, there exists $\sub$ with $\subHasCtx{(\ctx, \ctx_c)[\sub] \setminus \supp{[\sub]}}{\sub}{(\ctx, \ctx_c)}$ (by $\E_{\sub}$) such that $[\sub] \in \mgu{\U}$
 
 Recall that $[\subvar']$ is a unifier of the elements of $\U$.
 Then by Lemma~\ref{lem:unification-mgu} on $\E_{\sub}$ and $\E_{\subvar}'$, there exists $\sub'$ such that $\subHasCtx{\nil}{\sub'}{\ctx'}$ and $[\subvar'] = [\sub][\sub']$.

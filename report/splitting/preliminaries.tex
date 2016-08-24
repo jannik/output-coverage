@@ -30,35 +30,35 @@ We need a notion of substitution, and it will be convenient to distinguish betwe
 \begin{definition}[Abstract substitution]
 \label{def:abstract-substitution}
 An \emph{abstract substitution} is a mapping from variables to objects; from the set of all variable symbols to the syntactic category of objects.
-It is required that such a mapping is the identity on all but a finite subset of variables known as its \emph{domain}.
+It is required that such a mapping is the identity on all but a finite subset of variables known as its \emph{support}.
 (We denote abstract substitutions with the meta-variables $\abssub$ and $\abssubvar$.)
 \end{definition}
 
 By convention, application of substitutions is written in suffix notation, i.e. $x \abssub$ instead of $\abssub(x)$.
 We define
 \begin{align*}
-  \dom{\abssub} &\mdefi \set{x \| x \abssub \neq x} \\
-  \vran{\abssub} &\mdefi \bigcup{\set{\FV{x \abssub} \| x \in \dom{\abssub}}}
+  \supp{\abssub} &\mdefi \set{x \| x \abssub \neq x} \\
+  \vran{\abssub} &\mdefi \bigcup{\set{\FV{x \abssub} \| x \in \supp{\abssub}}}
 \end{align*}
 
-Since the domain of an abstract substitution $\abssub$ must be finite, say $\dom{\abssub} = \set{x_1, \ldots, x_n}$, we can unambiguously represent $\abssub$ by a set of mappings $\set{x_1 \mapsto x_1 \abssub, \ldots, x_n \mapsto x_n \abssub}$.
+Since the support of an abstract substitution $\abssub$ must be finite, say $\supp{\abssub} = \set{x_1, \ldots, x_n}$, we can unambiguously represent $\abssub$ by a set of mappings $\set{x_1 \mapsto x_1 \abssub, \ldots, x_n \mapsto x_n \abssub}$.
 Note, however, that such a set does not represent an abstract substitution if it contains multiple mappings for any one variable, i.e. it must represent a (partial) function.
 $\emptyset$ is then the identity substitution.
 
 Composition of abstract substitutions is denoted by juxtaposition, i.e. $x (\abssubvar \abssub) \mdefi (x \abssubvar) \abssub$ for all $x$.
 (Due to the suffix notation, composition here is naturally read left-to-right as opposed to regular function composition.)
-The restriction of an abstract substitution $\abssub$ to a set of variables $X$ (typically intersecting non-trivially with its domain), written $\restr{\abssub}{X}$, is the abstract substitution $\set{x \mapsto x \abssub \| x \in \dom{\abssub} \cap X}$.
+The restriction of an abstract substitution $\abssub$ to a set of variables $X$ (typically intersecting non-trivially with its support), written $\restr{\abssub}{X}$, is the abstract substitution $\set{x \mapsto x \abssub \| x \in \supp{\abssub} \cap X}$.
 
 Abstract substitutions are tacitly lifted to act on terms (objects, types or kinds) in a capture-avoiding manner, e.g. for types:
 \[ A \abssub \mdefi
   \begin{cases}
     a \; M_1 \abssub \; \ldots \; M_n \abssub           & \text{if $A = a \; M_1 \; \ldots \; M_n$} \\
     \pi{\typing{y}{P \abssub}}{(A' \abssubvar) \abssub} & \text{if $A = \pi{\typing{x}{P}}{A'}$,} \\
-                                                        & \text{letting $\abssubvar = \set{x \mapsto y}$ for some $y \notin \dom{\abssub} \cup \vran{\abssub} \cup \FV{A}$}
+                                                        & \text{letting $\abssubvar = \set{x \mapsto y}$ for some $y \notin \supp{\abssub} \cup \vran{\abssub} \cup \FV{A}$}
   \end{cases}
 \]
 % define inductively instead? and argue that it isn't a problem that (A' \abssubvar) is not a subterm of A!
-% maybe note that this definition might rename unnecessarily in cases where x \notin \dom{\abssub} \cup \vran{\abssub}
+% maybe note that this definition might rename unnecessarily in cases where x \notin \supp{\abssub} \cup \vran{\abssub}
 
 \begin{definition}[Concrete substitution]
 \label{def:concrete-substitution}
@@ -73,7 +73,7 @@ We require that any non-empty concrete substitution $(\sub, \for{M_x}{x})$ satis
 
 A concrete substitution $\sub = (\emptysub, \for{M_1}{x_1}, \ldots, \for{M_n}{x_n})$ naturally \emph{represents} a unique abstract substitution, written $[\sub]$, namely $\set{x_1 \mapsto M_1, \ldots, x_n \mapsto M_n}$.
 We can ignore those $i$ for which $M_i = x_i$, since making identity mappings explicit has no effect on abstract substitutions.
-Of course, an abstract substitution is in turn represented by many different concrete substitutions (in fact, with a domain of $n$ variables there will be $n!$ different ways of ordering the list, and adding explicit identity pairs for variables outside the domain leads to an infinite number of substitutions).
+Of course, an abstract substitution is in turn represented by many different concrete substitutions (in fact, with a support of $n$ variables there will be $n!$ different ways of ordering the list, and adding explicit identity pairs for variables outside the support leads to an infinite number of substitutions).
 
 
 
