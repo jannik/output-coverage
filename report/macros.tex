@@ -59,6 +59,7 @@ $\blacksquare$
 \ensurecommand{\K}{\mathcal{K}}
 \ensurecommand{\P}{\mathcal{P}}
 \ensurecommand{\S}{\mathcal{S}}
+\ensurecommand{\M}{\mathcal{M}}
 
 % misc/general
 \ensurecommand{\ldots}{...}
@@ -73,10 +74,6 @@ $\blacksquare$
 \ensurecommand{\dom}[1]{\mathsf{dom}(#1)}
 
 % abstract substitution
-\ensurecommand{\sub}{\sigma}
-\ensurecommand{\subvar}{\tau}
-\ensurecommand{\emptysub}{\varepsilon}
-\ensurecommand{\idsub}{\mathsf{id}}
 \ensurecommand{\abssub}{\theta}
 \ensurecommand{\abssubvar}{\vartheta}
 \ensurecommand{\U}{\mathcal{U}}
@@ -87,6 +84,10 @@ $\blacksquare$
 \ensurecommand{\restr}[2]{#1|_{#2}}
 
 % concrete substitution
+\ensurecommand{\sub}{\sigma}
+\ensurecommand{\subvar}{\tau}
+\ensurecommand{\emptysub}{\varepsilon}
+\ensurecommand{\idsub}{\mathsf{id}}
 \ensurecommand{\comp}[2]{#1 \circ #2}
 
 % unification
@@ -122,5 +123,35 @@ $\blacksquare$
 \ensurecommand{\anyEmpty}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{empty}}}
 \ensurecommand{\allCoops}[4]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{coops} \; #4}}
 \ensurecommand{\isEmpty}[3]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{empty}}}
+
+% operational semantics
+\ensurecommand{\conj}[2]{#1 \wedge #2}
+\ensurecommand{\isGoal}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{goal}}}
+\ensurecommand{\isClause}[1]{\ensuremath{\vdash_{\sig} #1 \; \mathbf{clause}}}
+\ensurecommand{\isProg}[1]{\ensuremath{\vdash_{\sig} #1 \; \mathbf{prog}}}
+\ensurecommand{\solveGoal}[3]{\ensuremath{#1 \vdash_{D} #2 \| #3}}
+\ensurecommand{\mguParts}[3]{\ensuremath{\mgu{#1} \rightarrow \tup{#2, #3}}}
+
+% mode checking
+\ensurecommand{\+}{\texttt{+}}
+\ensurecommand{\-}{\texttt{-}}
+\ensurecommand{\*}{\texttt{*}}
+\ensurecommand{\msig}{\mu}
+\ensurecommand{\appterm}{\psi}
+\ensurecommand{\appsub}{\Psi}
+\ensurecommand{\unk}{\mathtt{unk}}
+\ensurecommand{\gnd}{\mathtt{gnd}}
+\ensurecommand{\appsubMatch}[2]{\ensuremath{\vdash #1 : #2}}
+
+\ensurecommand{\mcheckIn}[2]{\ensuremath{#1 \vdash_{\msig}^{\+} #2}}
+\ensurecommand{\maddIn}[3]{\ensuremath{#1 \vdash_{\msig}^{\+} #2 > #3}}
+\ensurecommand{\mcheckOut}[2]{\ensuremath{#1 \vdash_{\msig}^{\-} #2}}
+\ensurecommand{\maddOut}[3]{\ensuremath{#1 \vdash_{\msig}^{\-} #2 > #3}}
+
+\ensurecommand{\mcheckGoal}[3]{\ensuremath{#1 \vdash_{\msig} #2 > #3}}
+\ensurecommand{\mcheckClause}[1]{\ensuremath{\vdash_{\msig} #1 \; \mathbf{mcorr}}}
+\ensurecommand{\mcheckProg}[1]{\ensuremath{\vdash_{\msig} #1 \; \mathbf{mcorr}}}
+
+\ensurecommand{\approx}{\prec}
 
 %%% end

@@ -1,7 +1,323 @@
 \clearpage
 
+\section*{Operational Semantics}
+
+Given a valid signature, we can interpret it as a logic program.
+We will soon define logic programs as being valid with respect to a valid signature, but there is a canonical way to derive from a signature a largest such program.
+
+Recall the syntactic categories of terms, in particular primitive types $P, Q \defi a \; M_1 \; \ldots \; M_n$.
+We define \textit{goals} (not to be confused with coverage goals), \textit{clauses}, and logic programs as follows:
+\begin{align*}
+\text{Goals} \qquad G &\defi \top \alt \conj{G_1}{G_2} \alt P \\
+\text{Clauses} \qquad C &\defi \pi{\ctx}{G \to P} \\
+\text{Programs} \qquad D &\defi \nil \alt D, C
+\end{align*}
+[Conjunction goals should probably not have a tree structure, i.e. be flat lists instead. I ignore this difference below.]
+
+We impose on logic programs the following type system:
+
+\begin{judgement}{\isGoal{\ctx}{G}}
+{$G$ is a valid goal relative to $\ctx$ and $\sig$}
+%
+\begin{prooftree}
+  \leftl{\rulename{G-Top} :}
+  \ax{\isGoal{\ctx}{\top}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isGoal{\ctx}{G_1}}
+  \ninf{\isGoal{\ctx}{G_2}}
+  \leftl{\rulename{G-Conj} :}
+  \binf{\isGoal{\ctx}{\conj{G_1}{G_2}}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\hasKind{\ctx}{P}{\type}}
+  \leftl{\rulename{G-Prim} :}
+  \uinf{\isGoal{\ctx}{P}}
+\end{prooftree}
+%
+\end{judgement}
+
+\begin{judgement}{\isClause{C}}
+{$C$ is valid clause relative to $\sig$}
+%
+\begin{prooftree}
+  \ninf{$(\typing{c}{\pi{\ctx}{P_n \to \ldots \to P_1 \to P_0}}) \in \sig$}
+  \leftl{\rulename{C-Clause} :}
+  \uinf{\isClause{\pi{\ctx}{(P_1 \wedge \ldots \wedge P_n) \to P_0}}} % note that (P_1 \wedge \ldots \wedge P_n) is automatically a valid goal wrt \ctx
+\end{prooftree}
+%
+\end{judgement}
+
+\begin{judgement}{\isProg{D}}
+{$D$ is a valid program relative to $\sig$}
+%
+\begin{prooftree}
+  \leftl{\rulename{D-Nil} :}
+  \ax{\isProg{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\isProg{D}}
+  \ninf{\isClause{C}}
+  \leftl{\rulename{D-Cons} :}
+  \binf{\isProg{D, C}}
+\end{prooftree}
+%
+\end{judgement}
+
+We can now present an operational semantics on valid logic programs.
+
+% discuss invariant: G[\sub \circ \subvar \circ grounding-sub] ``true''
+
+\begin{judgement}{\solveGoal{\sub}{G}{\subvar}}
+{$G$ under $\sub$ has solution substitution $\subvar$ in $D$}
+%
+\begin{prooftree}
+  \leftl{\rulename{E-Top} :}
+  \ax{\solveGoal{\sub}{\top}{\idsub}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\solveGoal{\sub}{G_1}{\subvar_1}}
+  \ninf{\solveGoal{\sub \circ \subvar_1}{G_2}{\subvar_2}}
+  \leftl{\rulename{E-Conj} :}
+  \binf{\solveGoal{\sub}{\conj{G_1}{G_2}}{\subvar_1 \circ \subvar_2}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{$(\pi{\ctx}{G \to Q}) \in D$}
+  \ninf{\mguParts{P[\sub], Q}{\subvar_1}{\subvar_1'}}
+  \ninf{\solveGoal{\subvar_1'}{G}{\subvar_2}}
+  \leftl{\rulename{E-Prim} :}
+  \rightl{($\dom{\ctx}$ fresh)}
+  \tinf{\solveGoal{\sub}{P}{\subvar_1 \circ \subvar_2}}
+\end{prooftree}
+%
+\end{judgement}
+
+Since we are using concrete substitutions, we wish to keep track of type information -- to keep them valid, and in order for composition to be a well-defined operation.
+In particular, we maintain the following invariant for the judgement $\solveGoal{\sub}{G}{\subvar}$.
+Given valid contexts $\ctxvar$ and $\ctxvar'$, if $\subHasCtx{\ctxvar'}{\sub}{\ctxvar}$ and $\isGoal{\ctxvar}{G}$, then $\subHasCtx{\ctxvar''}{\subvar}{\ctxvar'}$ (for some $\ctxvar''$).
+[I suppose I ought to either prove this property or embed it (along with type information) in the judgement.]
+
+The identity substitution in rule \rulename{E-Top}, then, should really be $\idsub_{\ctxvar'}$.
+And given valid $\ctx$ and $\ctxvar$ (with disjoint domains), the judgement ${\mguParts{P, Q}{\subvar}{\subvar'}}$ % to prevent line breal
+is defined to hold if $\hasKind{\ctxvar}{P}{\type}$, $\hasKind{\ctx}{Q}{\type}$, $\subHasCtx{\ctxvar'}{\subvar}{\ctxvar}$, $\subHasCtx{\ctxvar'}{\subvar'}{\ctx}$, $\subHasCtx{\ctxvar'}{(\subvar, \subvar')}{(\ctxvar, \ctx)}$, and $[(\subvar, \subvar')] \in \mgu{\ueqn{P}{Q}}$ -- for some $\ctxvar'$.
+We note that $\mguParts{P, Q}{\subvar}{\subvar'}$ in particular implies $P[\subvar] = P[\subvar, \subvar'] = Q[\subvar, \subvar'] = Q[\subvar']$.
+
 \section*{Mode Checking}
 
+We define a mode system.
 
+\begin{align*}
+\text{Modes} \qquad m &\defi \+ \alt \- \alt \* \\
+\text{Mode sequences} \qquad \mathbf{m} &\defi (m_1, \ldots, m_n)
+\end{align*}
+
+A \textit{mode signature} $\msig$ is a mapping from type constants to mode sequences.
+It is valid with respect to a signature $\sig$ if, for all type constants $a$ defined in $\sig$, $\msig(a)$ is defined and has a length matching the number of arguments in the kind assigned to $a$ in $\sig$.
+Note that we can safely set $\msig(a)$ to $(\*, \ldots, \*)$ (of the appropriate length) if it is otherwise undefined, hence we can extend a mode signature to match a signature.
+
+% define things like 'input variables of'
+
+We need a notion of approximate substitutions, which keep track of assumptions about variables being grounded.
+
+\begin{align*}
+\text{Approximate terms} \qquad \appterm &\defi \unk \alt \gnd \\
+\text{Approximate substitutions} \qquad \appsub &\defi \emptysub \alt \appsub, \for{\appterm}{x}
+\end{align*}
+
+% note that, as usual, we require that any x appears at most once in the domain
+
+\begin{judgement}{\appsubMatch{\appsub}{\ctx}}
+{$\appsub$ matches $\ctx$}
+%
+\begin{prooftree}
+  \leftl{\rulename{A-Nil} :}
+  \ax{\appsubMatch{\emptysub}{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\appsubMatch{\appsub}{\ctx}}
+  \leftl{\rulename{A-Cons} :}
+  \uinf{\appsubMatch{(\appsub, \for{\appterm}{x})}{(\ctx, \typing{x}{P})}}
+\end{prooftree}
+%
+\end{judgement}
+
+For any context $\ctx$, we let $\unk_{\ctx}$ be the approximate substitution that matches $\ctx$ and maps all variables to $\unk$.
+
+We are now ready to define mode checking:
+
+\vspace{0.5cm}
+\noindent \framebox{{\mcheckIn{\appsub}{P}}} (all input variables in $P$ are ground in $\appsub$) \\
+\noindent \framebox{{\mcheckOut{\appsub}{P}}} (all output variables in $P$ are ground in $\appsub$) \\
+\noindent \framebox{{\maddIn{\appsub}{P}{\appsub'}}} ($\appsub'$ is $\appsub$ with all input variables in $P$ made ground) \\
+\noindent \framebox{{\maddOut{\appsub}{P}{\appsub'}}} ($\appsub'$ is $\appsub$ with all output variables in $P$ made ground)
+\vspace{0.5cm}
+
+\begin{judgement}{\mcheckGoal{\appsub}{G}{\appsub'}}
+{$G$ is mode correct from $\appsub$ to $\appsub'$ relative to $\msig$}
+%
+\begin{prooftree}
+  \leftl{\rulename{MG-Top} :}
+  \ax{\mcheckGoal{\appsub}{\top}{\appsub}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\mcheckGoal{\appsub}{G_1}{\appsub_1}}
+  \ninf{\mcheckGoal{\appsub_1}{G_2}{\appsub_2}}
+  \leftl{\rulename{MG-Conj} :}
+  \binf{\mcheckGoal{\appsub}{\conj{G_1}{G_2}}{\appsub_2}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\mcheckIn{\appsub}{P}}
+  \ninf{\maddOut{\appsub}{P}{\appsub'}}
+  \leftl{\rulename{MG-Prim} :}
+  \binf{\mcheckGoal{\appsub}{P}{\appsub'}}
+\end{prooftree}
+%
+\end{judgement}
+
+\begin{judgement}{\mcheckClause{C}}
+{$C$ is mode correct relative to $\msig$}
+%
+\begin{prooftree}
+  \ninf{\maddIn{\unk_{\ctx}}{P}{\appsub_1}}
+  \ninf{\mcheckGoal{\appsub_1}{G}{\appsub_2}}
+  \ninf{\mcheckOut{\appsub_2}{P}}
+  \leftl{\rulename{MC-Clause} :}
+  \tinf{\mcheckClause{\pi{\ctx}{G \to P}}}
+\end{prooftree}
+%
+\end{judgement}
+
+\begin{judgement}{\mcheckProg{D}}
+{$D$ is mode correct relative to $\msig$}
+%
+\begin{prooftree}
+  \leftl{\rulename{MD-Nil} :}
+  \ax{\mcheckProg{\nil}}
+\end{prooftree}
+
+\begin{prooftree}
+  \ninf{\mcheckProg{D}}
+  \ninf{\mcheckClause{C}}
+  \leftl{\rulename{MD-Cons} :}
+  \binf{\mcheckProg{D, C}}
+\end{prooftree}
+%
+\end{judgement}
+
+The judgement $\mcheckGoal{\appsub}{G}{\appsub'}$ has the following invariant:
+Given $\ctx$, if $\appsubMatch{\appsub}{\ctx}$ and $\isGoal{\ctx}{G}$, then $\appsubMatch{\appsub'}{\ctx}$.
+
+We say an approximate substitution $\appsub$ \textit{approximates} a concrete substitution $\sub$, written $\appsub \approx \sub$, if they match the same domain $\ctx$ and all variables marked $\gnd$ by $\appsub$ are made ground by $\sub$.
+
+\begin{lemma}
+\label{lem:mode-soundness}
+Let $\sig$ be a valid signature, $\msig$ a valid mode signature relative to $\sig$, $D$ a logic program with $\isProg{D}$ and $\mcheckProg{D}$.
+Let $\ctxvar$ be a valid context, $G$ a goal with $\isGoal{\ctxvar}{G}$, $\appsub$ an approximate substitution with $\appsubMatch{\appsub}{\ctxvar}$, and $\sub$ a substitution with $\subHasCtx{\ctxvar'}{\sub}{\ctxvar}$ (for some $\ctxvar'$).
+
+If $\solveGoal{\sub}{G}{\subvar}$ (by $\E$, for some $\subvar$) and $\mcheckGoal{\appsub}{G}{\appsub'}$ (by $\M$, for some $\appsub'$) and $\appsub \approx \sub$, then $\appsub' \approx (\sub \circ \subvar)$.
+\end{lemma}
+
+\begin{proof}
+By induction on $\E$.
+
+\begin{itemize}
+	\item Case \rulename{E-Top} \\
+  We have
+  %
+  \begin{prooftree}
+    \leftl{$\E =$}
+    \ax{\solveGoal{\sub}{\top}{\idsub_{\ctxvar'}}}
+  \end{prooftree}
+  and so
+  \begin{prooftree}
+    \leftl{$\M =$}
+    \ax{\mcheckGoal{\appsub}{\top}{\appsub}}
+  \end{prooftree}
+  %
+  But then we have $\appsub \approx (\sub \circ \idsub_{\ctxvar'}) = \sub$ by assumption.
+  
+  \item Case \rulename{E-Conj} \\
+  We have
+  %
+  \begin{prooftree}
+    \prem{\E_1}{\solveGoal{\sub}{G_1}{\subvar_1}}
+    \prem{\E_2}{\solveGoal{\sub \circ \subvar_1}{G_2}{\subvar_2}}
+    \leftl{$\E =$}
+    \binf{\solveGoal{\sub}{\conj{G_1}{G_2}}{\subvar_1 \circ \subvar_2}}
+  \end{prooftree}
+  and so
+  \begin{prooftree}
+    \prem{\M_1}{\mcheckGoal{\appsub}{G_1}{\appsub_1}}
+    \prem{\M_2}{\mcheckGoal{\appsub_1}{G_2}{\appsub_2}}
+    \leftl{$\M =$}
+    \binf{\mcheckGoal{\appsub}{\conj{G_1}{G_2}}{\appsub_2}}
+  \end{prooftree}
+  %
+  By the IH on $\E_1$ with $\M_1$, we get $\appsub_1 \approx (\sub \circ \subvar_1)$.
+  Then by the IH on $\E_2$ with $\M_2$, we get $\appsub_2 \approx ((\sub \circ \subvar_1) \circ \subvar_2)$.
+  But since composition of concrete substitutions is associative, we have the required $\appsub_2 \approx (\sub \circ (\subvar_1 \circ \subvar_2))$.
+  
+  \item Case \rulename{E-Prim} \\
+  We have
+  %
+  \begin{prooftree}
+    \ninf{$(\pi{\ctx}{G \to Q}) \in D$}
+    \ninf{\mguParts{P[\sub], Q}{\subvar_1}{\subvar_1'}}
+    \prem{\E_1}{\solveGoal{\subvar_1'}{G}{\subvar_2}}
+    \leftl{$\E =$}
+    \tinf{\solveGoal{\sub}{P}{\subvar_1 \circ \subvar_2}}
+  \end{prooftree}
+  and so
+  \begin{prooftree}
+    \ninf{\mcheckIn{\appsub}{P}}
+    \ninf{\maddOut{\appsub}{P}{\appsub'}}
+    \leftl{$\M =$}
+    \binf{\mcheckGoal{\appsub}{P}{\appsub'}}
+  \end{prooftree}
+  %
+  Since $(\pi{\ctx}{G \to Q}) \in D$ and $\mcheckProg{D}$, we also have a derivation
+  \begin{prooftree}
+    \ninf{\maddIn{\unk_{\ctx}}{Q}{\appsub_1}}
+    \prem{\M_1}{\mcheckGoal{\appsub_1}{G}{\appsub_2}}
+    \ninf{\mcheckOut{\appsub_2}{Q}}
+    \tinf{\mcheckClause{\pi{\ctx}{G \to Q}}}
+  \end{prooftree}
+  %
+  Since $\mcheckIn{\appsub}{P}$ and $\appsub \approx \sub$ (by assumption), $\sub$ -- and in turn $\sub \circ \subvar_1$ -- grounds the input variables in $P$.
+  Hence the input variables in $Q$ are grounded by $\subvar_1'$.
+  [I should probably formulate this as a general lemma.]
+  That is, by definition of $\appsub_1$, $\appsub_1 \approx \subvar_1'$.
+  
+  Then by the IH on $\E_1$ with $\M_1$, we get $\appsub_2 \approx (\subvar_1' \circ \subvar_2)$.
+  So by $\mcheckOut{\appsub_2}{Q}$, the output variables in $Q$ are grounded by $\subvar_1' \circ \subvar_2$.
+  We note $Q[\subvar_1' \circ \subvar_2] = (Q[\subvar_1'])[\subvar_2] = (P[\sub][\subvar_1])[\subvar_2] = P[\sub \circ (\subvar_1 \circ \subvar_2)]$.
+  [This holds only because of the invariants, i.e. because the substitutions are valid relative to ``matching'' contexts.]
+  And so the output variables in $P$ are grounded by $\sub \circ (\subvar_1 \circ \subvar_2)$.
+  And, of course, $\appsub \approx \sub$ implies $\appsub \approx (\sub \circ (\subvar_1 \circ \subvar_2))$.
+  Hence, by definition of $\appsub'$, $\appsub' \approx (\sub \circ (\subvar_1 \circ \subvar_2))$ as required.
+  %
+\end{itemize}
+\end{proof}
+
+\begin{theorem}
+\label{thm:mode-soundness}
+Let $\sig$ be a valid signature, $\msig$ a valid mode signature relative to $\sig$, $D$ a logic program with $\isProg{D}$ and $\mcheckProg{D}$.
+Let $\ctx$ be a valid context and let $P = a \; M_1 \; \ldots \; M_n$ satisfy $\hasKind{\ctx}{P}{\type}$.
+Let $\msig(a) = (m_1, \ldots, m_n)$ and suppose, for all $i$, that $m_i = \+$ implies $M_i$ ground.
+
+If $\solveGoal{\idsub_{\ctx}}{P}{\subvar}$, then, for all $i$, $m_i = \-$ implies $M_i[\subvar]$ ground.
+\end{theorem}
+
+\begin{proof}
+Immediate from Lemma~\ref{lem:mode-soundness} (taking $\appsub = \unk_{\ctx}$).
+\end{proof}
 
 %%% end
