@@ -35,6 +35,7 @@ $\blacksquare$
 % meta
 \newcommand{\ensurecommand}[1]{\providecommand{#1}{}\renewcommand{#1}}
 \ensurecommand{\comment}[1]{}
+\ensurecommand{\note}[1]{[[#1]]} % for notes to Andrzej
 
 % judgements/rules
 \ensurecommand{\ninf}[1]{\AxiomC{#1}}
@@ -125,6 +126,7 @@ $\blacksquare$
 \ensurecommand{\isEmpty}[3]{\ensuremath{#1 \ctxsep #2 \; \vdash_{\sig} #3 \; \mathbf{empty}}}
 
 % operational semantics
+\ensurecommand{\from}{\leftarrow} % as opposed to \to
 \ensurecommand{\conj}[2]{#1 \wedge #2}
 \ensurecommand{\isGoal}[2]{\ensuremath{#1 \vdash_{\sig} #2 \; \mathbf{goal}}}
 \ensurecommand{\isClause}[1]{\ensuremath{\vdash_{\sig} #1 \; \mathbf{clause}}}
@@ -133,6 +135,8 @@ $\blacksquare$
 \ensurecommand{\mguParts}[3]{\ensuremath{\mgu{#1} \rightarrow \tup{#2, #3}}}
 
 % mode checking
+\ensurecommand{\mode}{m}
+\ensurecommand{\modeseq}{\vec{m}}
 \ensurecommand{\+}{\texttt{+}}
 \ensurecommand{\-}{\texttt{-}}
 \ensurecommand{\*}{\texttt{*}}
@@ -142,11 +146,17 @@ $\blacksquare$
 \ensurecommand{\unk}{\mathtt{unk}}
 \ensurecommand{\gnd}{\mathtt{gnd}}
 \ensurecommand{\appsubMatch}[2]{\ensuremath{\vdash #1 : #2}}
+\ensurecommand{\isGround}[2]{\ensuremath{#1 \vdash #2 \, {\downarrow}}} % consider add contexs
 
 \ensurecommand{\mcheckIn}[2]{\ensuremath{#1 \vdash_{\msig}^{\+} #2}}
-\ensurecommand{\maddIn}[3]{\ensuremath{#1 \vdash_{\msig}^{\+} #2 > #3}}
+\ensurecommand{\mcheckInCorr}[3]{\ensuremath{#1 \vdash_{\msig}^{\+} #2 \sim #3}}
 \ensurecommand{\mcheckOut}[2]{\ensuremath{#1 \vdash_{\msig}^{\-} #2}}
+% \ensurecommand{\mcheckOutCorr}[3]{\ensuremath{#1 \vdash_{\msig}^{\-} #2 \sim #3}}
+
+\ensurecommand{\maddIn}[3]{\ensuremath{#1 \vdash_{\msig}^{\+} #2 > #3}}
+\ensurecommand{\maddInCorr}[4]{\ensuremath{#1 \vdash_{\msig}^{\+} #2 \sim #3 > #4}}
 \ensurecommand{\maddOut}[3]{\ensuremath{#1 \vdash_{\msig}^{\-} #2 > #3}}
+% \ensurecommand{\maddOutcorr}[4]{\ensuremath{#1 \vdash_{\msig}^{\-} #2 \sim #3 > #4}}
 
 \ensurecommand{\mcheckGoal}[3]{\ensuremath{#1 \vdash_{\msig} #2 > #3}}
 \ensurecommand{\mcheckClause}[1]{\ensuremath{\vdash_{\msig} #1 \; \mathbf{mcorr}}}
